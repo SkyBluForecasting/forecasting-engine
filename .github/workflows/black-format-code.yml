@@ -13,7 +13,10 @@
 
 name: Black Format Code
 
-on: [pull_request_target]
+on:
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
   build:
@@ -32,7 +35,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check formatting using black
         uses: rickstaa/action-black@v1
         id: action_black
