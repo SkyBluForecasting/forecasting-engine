@@ -13,7 +13,11 @@
 
 name: Black Format Code
 
-on: [pull_request_target]
+on: 
+  push:
+    branches:
+      - '**'        # Run on any push to any branch
+  pull_request_target:  # Run on all PRs (even from forks)
 
 jobs:
   build:
