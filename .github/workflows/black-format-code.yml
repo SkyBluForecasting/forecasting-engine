@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
       - name: Check formatting using black
         uses: rickstaa/action-black@v1
         id: action_black
