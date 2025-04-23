@@ -1,0 +1,37 @@
+openstef.model.metamodels package
+=================================
+
+Submodules
+----------
+
+openstef.model.metamodels.feature\_clipper module
+-------------------------------------------------
+
+.. automodule:: openstef.model.metamodels.feature_clipper
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+openstef.model.metamodels.grouped\_regressor module
+---------------------------------------------------
+
+.. automodule:: openstef.model.metamodels.grouped_regressor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+openstef.model.metamodels.missing\_values\_handler module
+---------------------------------------------------------
+
+.. automodule:: openstef.model.metamodels.missing_values_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: openstef.model.metamodels
+   :members:
+   :undoc-members:
+   :show-inheritance:
