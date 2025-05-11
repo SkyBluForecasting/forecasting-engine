@@ -13,38 +13,38 @@
 
 name: Black Format Code
 
-on: 
+on:
   push:
     branches:
       - '**'        # Run on any push to any branch
-  pull_request:  # Run on all pull requests
+  pull_request:  # Trigger on PRs to main
+    types: [opened, synchronize, reopened]  # Trigger on PR events
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.11']
 
     permissions:
-      # Give the default GITHUB_TOKEN write permission to the pull request
-      # so that reviewdog can create annotations.
-      pull-requests: write
+      pull-requests: write  # Ensure reviewdog can annotate the PR
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT }}  # Ensure this token is set correctly
+
       - name: Check formatting using black
         uses: rickstaa/action-black@v1
         id: action_black
         with:
           black_args: "."
+
       - name: Annotate diff changes using reviewdog
         if: steps.action_black.outputs.is_formatted == 'true'
         uses: reviewdog/action-suggester@v1
         with:
           tool_name: blackfmt
-          github_token: ${{ secrets.GH_PAT }}
+          github_token: ${{ secrets.GH_PAT }}  # Make sure this token has correct scopes
