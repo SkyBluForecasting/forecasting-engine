@@ -41,4 +41,4 @@ jobs:
         uses: rickstaa/action-black@v1
         id: action_black
         with:
-          black_args: "."
+          black_args: "."  # Arguments to pass to black
