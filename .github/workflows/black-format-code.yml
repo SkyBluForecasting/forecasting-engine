@@ -17,7 +17,7 @@ on:
   push:
     branches:
       - '**'        # Run on any push to any branch
-  pull_request_target:  # Run on all PRs (even from forks)
+  pull_request:  # Run on all pull requests
 
 jobs:
   build:
