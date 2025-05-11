@@ -47,3 +47,4 @@ jobs:
         uses: reviewdog/action-suggester@v1
         with:
           tool_name: blackfmt
+          github_token: ${{ secrets.GH_PAT }}

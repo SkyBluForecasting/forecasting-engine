@@ -1,20 +1,17 @@
+from openstef.pipeline.train_model import train_model_pipeline
+from openstef.pipeline.create_forecast import create_forecast_pipeline
+from openstef.data_classes.prediction_job import PredictionJobDataClass
+
 import sys
-
-sys.path.append("/Users/mfavit/forecasting-engine/")
-
-import pandas as pd
 import webbrowser
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta
-from openstef.pipeline.train_model import train_model_pipeline
-from openstef.pipeline.create_forecast import create_forecast_pipeline
-from openstef.data_classes.prediction_job import PredictionJobDataClass
-
-
 import pandas as pd
 from io import StringIO
+
+sys.path.append("/Users/mfavit/forecasting-engine/")
 
 
 def generate_three_day_hourly_index(start_datetime: datetime) -> pd.DatetimeIndex:
@@ -79,7 +76,8 @@ train_data.to_csv(f"data/{fsa_id}_train.csv", index=True)
 print(f"CSV file 'data/{fsa_id}_train.csv' created successfully.")
 
 # Define properties of training/prediction - a 'prediction_job'
-# This pj will generate forecasts at 15min increments at horizons 0.25h, 0.5h etc up to 47h.
+# This pj will generate forecasts at 15min increments at horizons
+# 0.25h, 0.5h etc up to 47h.
 pj = dict(
     id=fsa_id,
     model="xgb",
