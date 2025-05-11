@@ -14,11 +14,8 @@
 name: Black Format Code
 
 on:
-  push:
-    branches:
-      - '**'        # Run on any push to any branch
-  pull_request:  # Trigger on PRs to main
-    types: [opened, synchronize, reopened]  # Trigger on PR events
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -28,13 +25,11 @@ jobs:
         python-version: ['3.11']
 
     permissions:
-      pull-requests: write  # Ensure reviewdog can annotate the PR
+      pull-requests: write
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}  # Ensure this token is set correctly
 
       - name: Check formatting using black
         uses: rickstaa/action-black@v1
@@ -42,15 +37,9 @@ jobs:
         with:
           black_args: "."
 
-      - name: Debug PR and Repository Info
-        run: |
-          echo "PR Info: ${{ github.event.pull_request.title }}"
-          echo "Repository Info: ${{ github.repository }}"
-          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
-
       - name: Annotate diff changes using reviewdog
         if: steps.action_black.outputs.is_formatted == 'true'
-        uses: reviewdog/action-suggester@v1
+        uses: reviewdog/action-suggester@v1.5
         with:
           tool_name: blackfmt
-          github_token: ${{ secrets.GITHUB_TOKEN }}  # Make sure this token has correct scopes
+          github_token: ${{ secrets.GITHUB_TOKEN }}
