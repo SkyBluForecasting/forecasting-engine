@@ -13,31 +13,32 @@
 
 name: Black Format Code
 
-on: [pull_request]
+on:
+  pull_request:  # Only trigger on PRs, not pushes
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.11']
 
     permissions:
-      # Give the default GITHUB_TOKEN write permission to the pull request
-      # so that reviewdog can create annotations.
-      pull-requests: write
+      pull-requests: write  # Required for reviewdog to post suggestions
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Check formatting using black
         uses: rickstaa/action-black@v1
         id: action_black
         with:
           black_args: "."
+
       - name: Annotate diff changes using reviewdog
         if: steps.action_black.outputs.is_formatted == 'true'
         uses: reviewdog/action-suggester@v1
         with:
           tool_name: blackfmt
+          github_token: ${{ secrets.GITHUB_TOKEN }}
