@@ -11,7 +11,7 @@
 # https://github.com/rickstaa/action-black?tab=readme-ov-file#annotate-changes 
 # for a similar example.
 
-name: Black Format Code
+name: Black Format Code # Updated workflow trigger
 
 on:
   pull_request:  # Only trigger on PRs, not pushes
