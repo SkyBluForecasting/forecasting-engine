@@ -50,7 +50,7 @@ jobs:
       # Checkout main to get access to the SONAR_TOKEN. PR from forked repo does not have access to it.
       - uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          repository: ${{ github.repository }}
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
       - name: Analyze with SonarCloud

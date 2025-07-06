@@ -4,56 +4,34 @@ SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.te
 SPDX-License-Identifier: MPL-2.0
 -->
 
-# OpenSTEF
+# Forecasting Engine
 
-<!-- Badges -->
+The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components for:
 
-[![Downloads](https://static.pepy.tech/badge/openstef)](https://pepy.tech/project/openstef)
-[![Downloads](https://static.pepy.tech/badge/openstef/month)](https://pepy.tech/project/openstef)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5585/badge)](https://bestpractices.coreinfrastructure.org/projects/5585)
+- Automated forecasting via AWS SQS queue polling
+- Integrating with S3 to pull forecasting input data and push generated forecasts 
+- Scheduled training and forecast generation jobs
 
-<!-- SonarCloud badges -->
+This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=bugs)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=code_smells)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=coverage)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=duplicated_lines_density)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=security_rating)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=sqale_index)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=OpenSTEF_openstef&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=OpenSTEF_openstef)
+## What's in this repo
 
-OpenSTEF is a Python package designed for generating short-term forecasts in the energy sector. The repository includes all the essential components required for machine learning pipelines that facilitate the forecasting process. To utilize the package, users are required to furnish their own data storage and retrieval interface.
-
-# Table of contents
-
-- [OpenSTEF](#openstef)
-- [Table of contents](#table-of-contents)
-- [External information sources](#external-information-sources)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Example notebooks](#example-notebooks)
-  - [Reference Implementation](#reference-implementation)
-  - [Database connector for OpenSTEF](#database-connector-for-openstef)
-- [License](license)
-- [Contributing](#contributing)
-- [Contact](#contact)
-
-# External information sources
-
-- [Documentation website](https://openstef.github.io/openstef/index.html);
-- [Python package](https://pypi.org/project/openstef/);
-- [Linux Foundation project page](https://www.lfenergy.org/projects/openstef/);
-- [Documentation on dashboard](https://raw.githack.com/OpenSTEF/.github/main/profile/html/openstef_dashboard_doc.html);
-- [Video about OpenSTEF](https://www.lfenergy.org/forecasting-to-create-a-more-resilient-optimized-grid/);
+forecasting-engine/
+├── openstef/ # Core licensed forecasting logic **Included in deployments
+├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. **Included in deployments
+├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) **Included in deployments
+├── scripts/ # Test scripts for local development / testing
+├── tests/ # Unit tests
+├── requirements.txt
+├── pyproject.toml
+└── README.md
 
 # Installation
 
-## Install the openstef package
+## Install the forecasting-engine
 
 ```shell
-pip install openstef
+pip install forecasting-engine
 ```
 
 ### Remark regarding installation within a **conda environment on Windows**
@@ -68,7 +46,7 @@ For more information on this issue see the [readme of pywin32](https://github.co
 
 ## Remark regarding installation on Apple Silicon
 
-If you want to install the `openstef` package on Apple Silicon (Mac with M1-chip or newer), you can encounter issues with the dependencies, such as `xgboost`. Solution:
+If you want to install the `forecasting-engine` package on Apple Silicon (Mac with M1-chip or newer), you can encounter issues with the dependencies, such as `xgboost`. Solution:
 
 1. Run `brew install libomp` (if you haven’t installed Homebrew: [follow instructions here](https://brew.sh/))
 2. If your interpreter can not find the `libomp` installation in `/usr/local/bin`, it is probably in `/opt/brew/Cellar`. Run:
@@ -83,11 +61,41 @@ ln -s /opt/brew/Cellar/libomp/{your_version}/lib /usr/local/opt/libomp/lib
 
 ### Remark regarding installation with minimal XGBoost dependency
 
-It is possible to install openSTEF with a minimal XGBoost (CPU-only) package. This only works on x86_64 (amd64) Linux and Windows platforms. Advantage is that significantly smaller dependencies are installed. In that case run:
+It is possible to install forecasting-engine with a minimal XGBoost (CPU-only) package. This only works on x86_64 (amd64) Linux and Windows platforms. Advantage is that significantly smaller dependencies are installed. In that case run:
 
 ```shell
-pip install openstef[cpu]
+pip install forecasting-engine[cpu]
 ```
+
+# About OpenSTEF
+
+This project uses OpenSTEF, an open-source forecasting library maintained by Alliander and the Linux Foundation. OpenSTEF provides:
+
+- Model training and forecasting pipelines
+- Feature engineering logic
+- Support for multiple forecast horizons and targets
+
+
+# Table of contents
+
+- [Table of contents](#table-of-contents)
+- [External information sources](#external-information-sources)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Example notebooks](#example-notebooks)
+  - [Reference Implementation](#reference-implementation)
+  - [Database connector for OpenSTEF](#database-connector-for-openstef)
+- [License](license)
+- [Contact](#contact)
+
+# External information sources
+
+- [Documentation website](https://openstef.github.io/openstef/index.html);
+- [Python package](https://pypi.org/project/openstef/);
+- [Linux Foundation project page](https://www.lfenergy.org/projects/openstef/);
+- [Documentation on dashboard](https://raw.githack.com/OpenSTEF/.github/main/profile/html/openstef_dashboard_doc.html);
+- [Video about OpenSTEF](https://www.lfenergy.org/forecasting-to-create-a-more-resilient-optimized-grid/);
+Note: The OpenSTEF code is maintained in the openstef/ folder under the MPL-2.0 license.
 
 # Usage
 
