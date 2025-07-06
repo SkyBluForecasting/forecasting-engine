@@ -9,7 +9,7 @@
 import numpy as np
 import pandas as pd
 
-from openstef import PROJECT_ROOT
+from forecasting_engine.openstef import PROJECT_ROOT
 from forecasting_engine.openstef.logging.logger_factory import get_logger
 
 logger = get_logger(__name__)

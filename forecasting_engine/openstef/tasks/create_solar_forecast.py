@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 
-from openstef import PROJECT_ROOT
+from forecasting_engine.openstef import PROJECT_ROOT
 from forecasting_engine.openstef.tasks.utils.predictionjobloop import PredictionJobLoop
 from forecasting_engine.openstef.tasks.utils.taskcontext import TaskContext
 

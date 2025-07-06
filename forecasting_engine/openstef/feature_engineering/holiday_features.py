@@ -8,7 +8,7 @@ import holidays
 import numpy as np
 import pandas as pd
 
-from openstef import PROJECT_ROOT
+from forecasting_engine.openstef import PROJECT_ROOT
 
 HOLIDAY_CSV_PATH: str = PROJECT_ROOT / "openstef" / "data" / "dutch_holidays.csv"
 
