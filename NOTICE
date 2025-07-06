@@ -1,0 +1,19 @@
+NOTICE
+
+This product includes software developed by the OpenSTEF project
+(https://github.com/Alliander/openstef) and its contributors.
+
+The OpenSTEF code is licensed under the Mozilla Public License Version 2.0 (MPL-2.0).
+
+You can obtain a copy of the MPL-2.0 license at:
+https://www.mozilla.org/en-US/MPL/2.0/
+
+The following files and directories in this product are derived from OpenSTEF:
+
+  - openstef/
+
+Any modifications made to OpenSTEF code in this product
+are also subject to the terms of the MPL-2.0 license.
+
+For the full terms and conditions of the MPL-2.0 license,
+please refer to the LICENSE file included with this product.
