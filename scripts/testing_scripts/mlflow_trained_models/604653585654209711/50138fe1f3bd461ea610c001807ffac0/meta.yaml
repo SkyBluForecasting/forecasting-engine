@@ -1,0 +1,16 @@
+artifact_uri: /Users/mfavit/forecasting-engine/testing_scripts/mlflow_trained_models/604653585654209711/50138fe1f3bd461ea610c001807ffac0/artifacts
+deleted_time: 1746890792822
+end_time: 1746849054759
+entry_point_name: ''
+experiment_id: '604653585654209711'
+lifecycle_stage: deleted
+run_id: 50138fe1f3bd461ea610c001807ffac0
+run_name: L9M
+run_uuid: 50138fe1f3bd461ea610c001807ffac0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746849041823
+status: 3
+tags: []
+user_id: mfavit

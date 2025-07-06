@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Toronto FSA test</title>
+<style>html,body,#map{margin:0;padding:0;height:100%}</style>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+</head>
+<body>
+<div id="map"></div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibWZhdml0NTUiLCJhIjoiY21hazh3emlxMDYxYTJpcTEwenI5bWJ4ZCJ9.pr5HlaFVW3l1hBFyK0gZGQ';
+
+/* ---- paste YOUR style URL below ---- */
+const styleURL = 'mapbox://styles/mfavit55/cmat5t1w401ir01s84l3kcdbh';
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: styleURL,
+  center: [-79.4, 43.65],
+  zoom: 12
+});
+
+map.on('load', () => console.log('Map loaded – style & tiles OK'));
+</script>
+</body>
+</html>
