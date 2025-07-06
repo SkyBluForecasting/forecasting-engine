@@ -29,7 +29,8 @@ class TestComponentForecast(BaseTestCase):
         """
 
         new_model_file = str(
-            PROJECT_ROOT / "openstef/data/dazls_model_3.4.24/dazls_stored_3.4.24_"
+            PROJECT_ROOT
+            / "forecasting_engine/openstef/data/dazls_model_3.4.24/dazls_stored_3.4.24_"
         )
 
         dazls_model = Dazls()
