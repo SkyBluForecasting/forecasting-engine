@@ -63,13 +63,18 @@ jobs:
         ls -la
         [ -f .coverage ] && echo "✅ .coverage exists" || echo "❌ .coverage missing"
     
+    - name: Move .coverage into artifacts folder
+      run: |
+        mkdir -p coverage-artifacts
+        mv .coverage coverage-artifacts/
+  
     - name: Upload coverage data file
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
-        path: '.coverage'
+        path: coverage-artifacts/
         retention-days: 14
-  
+
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -87,9 +92,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-data
-    
+
     - name: Move .coverage to working dir
-      run: mv coverage-data/.coverage ./
+      run: |
+        mv coverage-data/.coverage ./
 
     - name: Display coverage summary
       run: |
