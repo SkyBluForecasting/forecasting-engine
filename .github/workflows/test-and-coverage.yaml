@@ -67,7 +67,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
-        path: .coverage
+        path: '.coverage'
         retention-days: 14
   
     - name: Upload coverage report
