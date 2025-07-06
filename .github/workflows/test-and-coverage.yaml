@@ -52,16 +52,10 @@ jobs:
         pip install -r test-requirements.txt
         pytest --cov=forecasting_engine/ --cov-branch --cov-report=xml:coverage.xml --cov-report=term-missing test/ --junitxml=pytest-report.xml
 
-    - name: Debug coverage file
+    - name: Combine coverage data files
       run: |
-        echo "Looking for .coverage file..."
-        ls -lah
-        if [ -f .coverage ]; then
-          echo ".coverage file exists ✅"
-        else
-          echo "❌ .coverage file NOT FOUND"
-          exit 1
-        fi
+        pip install coverage
+        coverage combine
     
     - name: Upload coverage data file
       uses: actions/upload-artifact@v4
