@@ -23,13 +23,11 @@ class CustomOpenstfRegressor(OpenstfRegressor):
 
     @staticmethod
     @abstractmethod
-    def valid_kwargs() -> list[str]:
-        ...
+    def valid_kwargs() -> list[str]: ...
 
     @staticmethod
     @abstractmethod
-    def objective() -> Type[RegressorObjective]:
-        ...
+    def objective() -> Type[RegressorObjective]: ...
 
 
 def load_custom_model(custom_model_path) -> CustomOpenstfRegressor:

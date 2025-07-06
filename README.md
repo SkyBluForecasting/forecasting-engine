@@ -16,15 +16,13 @@ This repo is designed to be deployed on an EC2 instance and serves as the backen
 
 ## What's in this repo
 
-forecasting-engine/
-├── openstef/ # Core licensed forecasting logic **Included in deployments
-├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. **Included in deployments
-├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) **Included in deployments
-├── scripts/ # Test scripts for local development / testing
-├── tests/ # Unit tests
-├── requirements.txt
-├── pyproject.toml
-└── README.md
+forecasting-engine/ **Included in deployments
+├── openstef/ # Core licensed forecasting logic 
+├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. 
+├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) 
+scripts/ # Test scripts for local testing ** NOT included in deployments
+test/ # Unit tests  ** NOT included in deployments
+
 
 # Installation
 

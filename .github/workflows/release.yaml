@@ -16,6 +16,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python (for sed and Python environment)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Bump version in setup.py
+        run: |
+          # Remove leading 'v' from tag
+          VERSION=${{ github.event.inputs.tag }}
+          VERSION=${VERSION#v}
+          echo "Bumping version to $VERSION in setup.py"
+          # Use sed to replace version string
+          sed -i -E "s/version=\"[^\"]+\"/version=\"$VERSION\"/" setup.py
+          # Check the change
+          grep "version=" setup.py
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add setup.py
+          git commit -m "Bump version to ${{ github.event.inputs.tag }}"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
       - name: Configure git for tagging
         run: |
           git config user.name "github-actions"

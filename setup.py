@@ -32,15 +32,15 @@ def read_long_description_from_readme():
 
 
 setup(
-    name="openstef",
-    version="3.4.72",
-    packages=find_packages(include=["openstef", "openstef.*"]),
-    description="Open short term energy forecaster",
+    name="forecasting-engine",
+    version="0.0.0",
+    packages=find_packages(include=["forecasting-engine", "forecasting-engine.*"]),
+    description="Forecasting engine",
     long_description=read_long_description_from_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/OpenSTEF/openstef",
-    author="Alliander N.V",
-    author_email="korte.termijn.prognoses@alliander.com",
+    url="https://github.com/mfavit/forecasting-engine",
+    author="Beam TBD",
+    author_email="Beam TBD",
     license="MPL-2.0",
     keywords=["energy", "forecasting", "machinelearning"],
     # See https://setuptools.readthedocs.io/en/latest/userguide/datafiles.html

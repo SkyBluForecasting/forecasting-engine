@@ -29,10 +29,10 @@ jobs:
     # Build documentation
     - name: Build documentation
       run: |
-          cp requirements.txt openstef/docs/requirements.txt &&\
-          printf "\npydata-sphinx-theme==0.12.0\n" >> openstef/docs/requirements.txt &&\
-          printf "\njinja2==3.0.0\n" >> openstef/docs/requirements.txt &&\
-          printf "\nsphinx_autodoc_typehints==1.19.4\n" >> openstef/docs/requirements.txt &&\
-          printf "\nmkdocs==1.2.3\n" >> openstef/docs/requirements.txt &&\
-          pip install -r openstef/docs/requirements.txt &&\
+          cp requirements.txt forecasting-engine/openstef/docs/requirements.txt &&\
+          printf "\npydata-sphinx-theme==0.12.0\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+          printf "\njinja2==3.0.0\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+          printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+          printf "\nmkdocs==1.2.3\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+          pip install -r forecasting-engine/openstef/docs/requirements.txt &&\
           sphinx-apidoc -o docs openstef

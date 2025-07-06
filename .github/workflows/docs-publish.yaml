@@ -29,18 +29,18 @@ jobs:
         python-version: '3.11'
     # Run pre-build command
     - run: |
-        cp requirements.txt docs/requirements.txt &&\
-        printf "\npydata-sphinx-theme==0.12.0\n" >> openstef/docs/requirements.txt &&\
-        printf "\njinja2==3.0.0\n" >> openstef/docs/requirements.txt &&\
-        printf "\nsphinx_autodoc_typehints==1.19.4\n" >> openstef/docs/requirements.txt &&\
-        printf "\nmkdocs==1.2.3\n" >> openstef/docs/requirements.txt &&\
-        pip install -r openstef/docs/requirements.txt &&\
+        cp requirements.txt forecasting-engine/openstef/docs/requirements.txt &&\
+        printf "\npydata-sphinx-theme==0.12.0\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+        printf "\njinja2==3.0.0\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+        printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+        printf "\nmkdocs==1.2.3\n" >> forecasting-engine/openstef/docs/requirements.txt &&\
+        pip install -r forecasting-engine/openstef/docs/requirements.txt &&\
         sphinx-apidoc -o docs openstef
 
     - name: Build and commit
       uses: sphinx-notes/pages@v2
       with:
-        requirements_path: .openstef/docs/requirements.txt
+        requirements_path: .forecasting-engine/openstef/docs/requirements.txt
 
     - name: Push changes
       uses: ad-m/github-push-action@master
