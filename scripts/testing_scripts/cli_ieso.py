@@ -1,6 +1,10 @@
-from openstef.pipeline.train_model import train_model_pipeline
-from openstef.pipeline.create_forecast import create_forecast_pipeline
-from openstef.data_classes.prediction_job import PredictionJobDataClass
+from forecasting_engine.openstef.pipeline.train_model import train_model_pipeline
+from forecasting_engine.openstef.pipeline.create_forecast import (
+    create_forecast_pipeline,
+)
+from forecasting_engine.openstef.data_classes.prediction_job import (
+    PredictionJobDataClass,
+)
 
 import sys
 import pandas as pd

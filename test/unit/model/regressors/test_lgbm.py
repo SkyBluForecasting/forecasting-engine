@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from test.unit.utils.base import BaseTestCase
 
-from openstef.model.regressors.lgbm import LGBMOpenstfRegressor
+from forecasting_engine.openstef.model.regressors.lgbm import LGBMOpenstfRegressor
 
 
 class TestXGB(BaseTestCase):

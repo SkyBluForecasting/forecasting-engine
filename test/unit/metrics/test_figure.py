@@ -7,7 +7,10 @@ from test.unit.utils.data import TestData
 
 import pandas as pd
 
-from openstef.metrics.figure import plot_data_series, plot_feature_importance
+from forecasting_engine.openstef.metrics.figure import (
+    plot_data_series,
+    plot_feature_importance,
+)
 
 
 class Teopenstefigure(BaseTestCase):

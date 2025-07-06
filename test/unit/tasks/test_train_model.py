@@ -10,11 +10,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from openstef.enums import PipelineType
-from openstef.exceptions import InputDataOngoingFlatlinerError
-from openstef.tasks.train_model import TRAINING_PERIOD_DAYS
-from openstef.tasks.train_model import main as task_main
-from openstef.tasks.train_model import train_model_task
+from forecasting_engine.openstef.enums import PipelineType
+from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
+from forecasting_engine.openstef.tasks.train_model import TRAINING_PERIOD_DAYS
+from forecasting_engine.openstef.tasks.train_model import main as task_main
+from forecasting_engine.openstef.tasks.train_model import train_model_task
 
 
 class TestTrainModelTask(TestCase):

@@ -10,10 +10,15 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 
-from openstef.enums import AggregateFunction, BiddingZone
-from openstef.feature_engineering import apply_features, weather_features
-from openstef.feature_engineering.feature_applicator import TrainFeatureApplicator
-from openstef.feature_engineering.lag_features import (
+from forecasting_engine.openstef.enums import AggregateFunction, BiddingZone
+from forecasting_engine.openstef.feature_engineering import (
+    apply_features,
+    weather_features,
+)
+from forecasting_engine.openstef.feature_engineering.feature_applicator import (
+    TrainFeatureApplicator,
+)
+from forecasting_engine.openstef.feature_engineering.lag_features import (
     generate_lag_feature_functions,
     generate_non_trivial_lag_times,
 )

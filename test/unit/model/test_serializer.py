@@ -15,10 +15,12 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from openstef.data_classes.model_specifications import ModelSpecificationDataClass
-from openstef.metrics.reporter import Report
-from openstef.model.model_creator import ModelCreator
-from openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.data_classes.model_specifications import (
+    ModelSpecificationDataClass,
+)
+from forecasting_engine.openstef.metrics.reporter import Report
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
 
 
 class TestMLflowSerializer(BaseTestCase):

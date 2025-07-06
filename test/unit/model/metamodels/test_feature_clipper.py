@@ -5,7 +5,7 @@ import unittest
 
 import pandas as pd
 
-from openstef.model.metamodels.feature_clipper import FeatureClipper
+from forecasting_engine.openstef.model.metamodels.feature_clipper import FeatureClipper
 
 
 class TestFeatureClipper(unittest.TestCase):

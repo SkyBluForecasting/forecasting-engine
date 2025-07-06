@@ -10,9 +10,13 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
 
-from openstef.data_classes.split_function import SplitFuncDataClass
-from openstef.model_selection.model_selection import split_data_train_validation_test
-from openstef.pipeline.train_model import train_pipeline_step_split_data
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.model_selection.model_selection import (
+    split_data_train_validation_test,
+)
+from forecasting_engine.openstef.pipeline.train_model import (
+    train_pipeline_step_split_data,
+)
 
 # define constants
 SPLIT_PARAMS = {

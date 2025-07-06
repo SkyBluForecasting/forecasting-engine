@@ -9,7 +9,9 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from pandas import Timestamp
 
-from openstef.tasks.create_components_forecast import create_components_forecast_task
+from forecasting_engine.openstef.tasks.create_components_forecast import (
+    create_components_forecast_task,
+)
 
 FORECAST_MOCK = pd.DataFrame(
     data={

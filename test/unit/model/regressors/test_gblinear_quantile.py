@@ -11,9 +11,13 @@ import pandas as pd
 import sklearn
 from xgboost import Booster
 
-from openstef.feature_engineering.apply_features import apply_features
-from openstef.model.model_creator import ModelCreator
-from openstef.model.regressors.gblinear_quantile import GBLinearQuantileOpenstfRegressor
+from forecasting_engine.openstef.feature_engineering.apply_features import (
+    apply_features,
+)
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.regressors.gblinear_quantile import (
+    GBLinearQuantileOpenstfRegressor,
+)
 
 train_input: pd.DataFrame = TestData.load("reference_sets/307-train-data.csv")
 

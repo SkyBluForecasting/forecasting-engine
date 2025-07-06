@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import unittest
 
-from openstef.metrics.metrics import get_eval_metric_function, mae
+from forecasting_engine.openstef.metrics.metrics import get_eval_metric_function, mae
 
 
 class TestEvalMetricFunction(unittest.TestCase):

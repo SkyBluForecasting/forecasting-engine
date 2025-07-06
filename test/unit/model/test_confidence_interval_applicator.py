@@ -8,7 +8,9 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from openstef.model.confidence_interval_applicator import ConfidenceIntervalApplicator
+from forecasting_engine.openstef.model.confidence_interval_applicator import (
+    ConfidenceIntervalApplicator,
+)
 
 
 class MockModel:

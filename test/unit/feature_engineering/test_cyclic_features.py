@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from openstef.feature_engineering.cyclic_features import (
+from forecasting_engine.openstef.feature_engineering.cyclic_features import (
     add_daylight_terrestrial_feature,
     add_seasonal_cyclic_features,
     add_time_cyclic_features,

@@ -13,30 +13,36 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import sklearn
 
-from openstef.data_classes.data_prep import DataPrepDataClass
-from openstef.data_classes.split_function import SplitFuncDataClass
-from openstef.enums import ModelType
-from openstef.exceptions import (
+from forecasting_engine.openstef.data_classes.data_prep import DataPrepDataClass
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.enums import ModelType
+from forecasting_engine.openstef.exceptions import (
     InputDataInsufficientError,
     InputDataWrongColumnOrderError,
     SkipSaveTrainingForecasts,
 )
-from openstef.feature_engineering.data_preparation import (
+from forecasting_engine.openstef.feature_engineering.data_preparation import (
     ARDataPreparation,
     LegacyDataPreparation,
 )
-from openstef.feature_engineering.feature_applicator import TrainFeatureApplicator
-from openstef.metrics.reporter import Report
-from openstef.model.objective import RegressorObjective
-from openstef.model.regressors.custom_regressor import CustomOpenstfRegressor
-from openstef.model_selection.model_selection import split_data_train_validation_test
-from openstef.pipeline.train_model import (
+from forecasting_engine.openstef.feature_engineering.feature_applicator import (
+    TrainFeatureApplicator,
+)
+from forecasting_engine.openstef.metrics.reporter import Report
+from forecasting_engine.openstef.model.objective import RegressorObjective
+from forecasting_engine.openstef.model.regressors.custom_regressor import (
+    CustomOpenstfRegressor,
+)
+from forecasting_engine.openstef.model_selection.model_selection import (
+    split_data_train_validation_test,
+)
+from forecasting_engine.openstef.pipeline.train_model import (
     DEFAULT_TRAIN_HORIZONS_HOURS,
     train_model_pipeline,
     train_model_pipeline_core,
     train_pipeline_common,
 )
-from openstef.validation import validation
+from forecasting_engine.openstef.validation import validation
 
 
 class DummyObjective(RegressorObjective): ...

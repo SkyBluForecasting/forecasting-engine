@@ -11,8 +11,8 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
 
-from openstef.model.regressors.dazls import Dazls
-from openstef.pipeline.create_component_forecast import (
+from forecasting_engine.openstef.model.regressors.dazls import Dazls
+from forecasting_engine.openstef.pipeline.create_component_forecast import (
     create_components_forecast_pipeline,
 )
 

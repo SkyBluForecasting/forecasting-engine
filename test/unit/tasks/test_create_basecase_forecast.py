@@ -8,8 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from openstef.enums import PipelineType
-from openstef.tasks.create_basecase_forecast import create_basecase_forecast_task
+from forecasting_engine.openstef.enums import PipelineType
+from forecasting_engine.openstef.tasks.create_basecase_forecast import (
+    create_basecase_forecast_task,
+)
 
 # Specify forecast mock.
 # Make sure this has a datetime of at least NOW+48hours,

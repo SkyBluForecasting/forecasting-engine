@@ -5,10 +5,12 @@
 import sys
 from unittest import TestCase
 
-from openstef.enums import ModelType
-from openstef.model.model_creator import ModelCreator
-from openstef.model.regressors.regressor import OpenstfRegressor
-from openstef.model.regressors.xgb_quantile import XGBQuantileOpenstfRegressor
+from forecasting_engine.openstef.enums import ModelType
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor
+from forecasting_engine.openstef.model.regressors.xgb_quantile import (
+    XGBQuantileOpenstfRegressor,
+)
 
 
 class TestModelCreator(TestCase):

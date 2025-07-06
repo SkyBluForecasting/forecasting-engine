@@ -8,8 +8,8 @@ from test.unit.utils.data import TestData
 import numpy as np
 import pytest
 
-from openstef.exceptions import InputDataOngoingFlatlinerError
-from openstef.validation import validation
+from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
+from forecasting_engine.openstef.validation import validation
 
 
 class TestDataValidation(BaseTestCase):

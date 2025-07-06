@@ -7,8 +7,10 @@ from test.unit.utils.data import TestData
 import sklearn
 from lightgbm import LGBMRegressor
 
-from openstef.model.metamodels.grouped_regressor import GroupedRegressor
-from openstef.model.regressors.linear import LinearRegressor
+from forecasting_engine.openstef.model.metamodels.grouped_regressor import (
+    GroupedRegressor,
+)
+from forecasting_engine.openstef.model.regressors.linear import LinearRegressor
 
 
 class TestGroupedRegressor(BaseTestCase):

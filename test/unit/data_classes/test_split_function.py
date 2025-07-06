@@ -6,7 +6,7 @@ import copy
 import json
 import unittest
 
-from openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
 
 
 def dummy_split_func(arg1, arg2, *args, **kwargs):
@@ -62,9 +62,9 @@ class TestSplitFuncDataClass(unittest.TestCase):
 
         # Non Callable object
         split_func_dc = copy.deepcopy(self.split_func_with_strings)
-        split_func_dc[
-            "function"
-        ] = "test.unit.data_classes.test_split_function.dummy_not_func"
+        split_func_dc["function"] = (
+            "test.unit.data_classes.test_split_function.dummy_not_func"
+        )
         with self.assertRaises(ValueError):
             _ = split_func_dc.load()
 

@@ -8,8 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from openstef.feature_engineering.data_preparation import LegacyDataPreparation
-from openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.feature_engineering.data_preparation import (
+    LegacyDataPreparation,
+)
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
 
 
 class TestDataPreparation(TestCase):

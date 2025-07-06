@@ -8,12 +8,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
 
-from openstef.data_classes.split_function import SplitFuncDataClass
-from openstef.feature_engineering.feature_applicator import TrainFeatureApplicator
-from openstef.pipeline.train_create_forecast_backtest import (
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.feature_engineering.feature_applicator import (
+    TrainFeatureApplicator,
+)
+from forecasting_engine.openstef.pipeline.train_create_forecast_backtest import (
     train_model_and_forecast_back_test,
 )
-from openstef.validation import validation
+from forecasting_engine.openstef.validation import validation
 
 
 def timeseries_split(data, n_folds, gap):

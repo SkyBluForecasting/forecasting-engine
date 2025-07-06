@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 from mlflow.exceptions import MlflowException
 
-from openstef.model.serializer import MLflowSerializer
-from openstef.validation.validation import calc_completeness_features
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.validation.validation import calc_completeness_features
 
 
 class CalcCompletenessTest(BaseTestCase):

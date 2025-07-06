@@ -11,7 +11,7 @@ import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 
-from openstef.model.regressors.xgb_multioutput_quantile import (
+from forecasting_engine.openstef.model.regressors.xgb_multioutput_quantile import (
     XGBMultiOutputQuantileOpenstfRegressor,
 )
 

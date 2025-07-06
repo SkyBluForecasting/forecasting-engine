@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
-from openstef.feature_engineering.missing_values_transformer import (
+from forecasting_engine.openstef.feature_engineering.missing_values_transformer import (
     MissingValuesTransformer,
 )
 

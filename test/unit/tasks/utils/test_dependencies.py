@@ -4,8 +4,10 @@
 
 import unittest
 
-from openstef.data_classes.prediction_job import PredictionJobDataClass
-from openstef.tasks.utils import dependencies as deps
+from forecasting_engine.openstef.data_classes.prediction_job import (
+    PredictionJobDataClass,
+)
+from forecasting_engine.openstef.tasks.utils import dependencies as deps
 
 
 class TestDependencies(unittest.TestCase):

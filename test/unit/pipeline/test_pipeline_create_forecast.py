@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 from mlflow.exceptions import MlflowException
 
-from openstef.model.serializer import MLflowSerializer
-from openstef.pipeline import create_forecast, utils
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.pipeline import create_forecast, utils
 
 
 class TestCreateForecastPipeline(BaseTestCase):

@@ -8,8 +8,10 @@ from test.unit.utils.data import TestData
 import numpy as np
 import pandas as pd
 
-from openstef.exceptions import NoRealisedLoadError
-from openstef.pipeline.create_basecase_forecast import create_basecase_forecast_pipeline
+from forecasting_engine.openstef.exceptions import NoRealisedLoadError
+from forecasting_engine.openstef.pipeline.create_basecase_forecast import (
+    create_basecase_forecast_pipeline,
+)
 
 
 class TestBaseCaseForecast(BaseTestCase):
@@ -19,9 +21,9 @@ class TestBaseCaseForecast(BaseTestCase):
         self.PJ = TestData.get_prediction_job(pid=307)
         forecast_input = TestData.load("reference_sets/307-test-data.csv")
         # Set last 7 days to nan, just like operationally
-        forecast_input.loc[
-            forecast_input.index.max() - timedelta(days=7) :, "load"
-        ] = np.nan
+        forecast_input.loc[forecast_input.index.max() - timedelta(days=7) :, "load"] = (
+            np.nan
+        )
         # Shift so the input matches 'now'
         offset_seconds = (
             pd.to_datetime(datetime.now(tz=UTC))
@@ -80,9 +82,9 @@ class TestBaseCaseForecast(BaseTestCase):
         forecast_input.loc[
             forecast_input.index.max() - timedelta(days=21) :, "load"
         ] = forecast_input.loc[forecast_input.index.max() - timedelta(days=14), "load"]
-        forecast_input.loc[
-            forecast_input.index.max() - timedelta(days=7) :, "load"
-        ] = np.nan
+        forecast_input.loc[forecast_input.index.max() - timedelta(days=7) :, "load"] = (
+            np.nan
+        )
 
         base_case_forecast = create_basecase_forecast_pipeline(self.PJ, forecast_input)
 

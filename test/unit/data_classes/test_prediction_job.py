@@ -5,7 +5,9 @@
 import unittest
 from test.unit.utils.data import TestData
 
-from openstef.data_classes.prediction_job import PredictionJobDataClass
+from forecasting_engine.openstef.data_classes.prediction_job import (
+    PredictionJobDataClass,
+)
 
 
 class TestPredictionJobs(unittest.TestCase):

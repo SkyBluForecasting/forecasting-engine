@@ -9,7 +9,7 @@ from test.unit.utils.data import TestData
 import numpy as np
 import pandas as pd
 
-from openstef.model_selection import model_selection
+from forecasting_engine.openstef.model_selection import model_selection
 
 # define constants
 SPLIT_PARAMS = {

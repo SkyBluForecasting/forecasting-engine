@@ -2,15 +2,17 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import unittest
-from openstef.enums import ModelType
+from forecasting_engine.openstef.enums import ModelType
 from test.unit.utils.base import BaseTestCase
 from test.unit.utils.data import TestData
 
 import optuna
 
-from openstef.feature_engineering.feature_applicator import TrainFeatureApplicator
-from openstef.model.model_creator import ModelCreator
-from openstef.model.objective import (
+from forecasting_engine.openstef.feature_engineering.feature_applicator import (
+    TrainFeatureApplicator,
+)
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.objective import (
     LGBRegressorObjective,
     LinearRegressorObjective,
     RegressorObjective,
