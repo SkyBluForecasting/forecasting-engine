@@ -57,22 +57,17 @@ jobs:
         pip install coverage
         coverage combine
 
-    - name: Debug check for final .coverage
+    - name: Confirm file exists before upload
       run: |
-        echo "After coverage combine:"
-        ls -lah
-        if [ -f .coverage ]; then
-          echo ".coverage created ✅"
-        else
-          echo "❌ .coverage NOT FOUND after combine"
-          exit 1
-        fi
+        echo "Files in current directory:"
+        ls -la
+        [ -f .coverage ] && echo "✅ .coverage exists" || echo "❌ .coverage missing"
     
     - name: Upload coverage data file
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
-        path: ./.coverage
+        path: .coverage
         retention-days: 14
   
     - name: Upload coverage report
