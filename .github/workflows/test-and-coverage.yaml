@@ -77,7 +77,10 @@ jobs:
       with:
         name: coverage-data
     
+    - name: Move .coverage to working dir
+      run: mv coverage-data/.coverage ./
+
     - name: Display coverage summary
       run: |
         pip install coverage
-        coverage report --fail-under=85
+        coverage report -i coverage-data/.coverage --fail-under=85
