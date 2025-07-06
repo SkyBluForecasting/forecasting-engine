@@ -56,6 +56,17 @@ jobs:
       run: |
         pip install coverage
         coverage combine
+
+    - name: Debug check for final .coverage
+      run: |
+        echo "After coverage combine:"
+        ls -lah
+        if [ -f .coverage ]; then
+          echo ".coverage created ✅"
+        else
+          echo "❌ .coverage NOT FOUND after combine"
+          exit 1
+        fi
     
     - name: Upload coverage data file
       uses: actions/upload-artifact@v4
