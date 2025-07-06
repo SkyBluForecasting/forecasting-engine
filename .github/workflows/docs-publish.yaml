@@ -35,7 +35,7 @@ jobs:
         printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
         printf "\nmkdocs==1.2.3\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
         pip install -r forecasting_engine/openstef/docs/requirements.txt &&\
-        sphinx-apidoc -o docs openstef
+        sphinx-apidoc -o docs forecasting_enginee/openstef
 
     - name: Build and commit
       uses: sphinx-notes/pages@v2
