@@ -92,7 +92,7 @@ class TestTrainModelTask(TestCase):
         self.assertEqual(len(input_data), expected_data_points)
 
     @patch(
-        "openstef.tasks.train_model.train_model_pipeline",
+        "forecasting_engine.openstef.tasks.train_model.train_model_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_train_model_known_zero_flatliner(self):
@@ -113,7 +113,7 @@ class TestTrainModelTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.train_model.train_model_pipeline",
+        "forecasting_engine.openstef.tasks.train_model.train_model_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_train_model_unexpected_zero_flatliner(self):

@@ -72,10 +72,10 @@ class TestConfidenceIntervalApplicator(TestCase):
         )
 
     @patch(
-        "openstef.model.confidence_interval_applicator.ConfidenceIntervalApplicator._add_quantiles_to_forecast_quantile_regression"
+        "forecasting_engine.openstef.model.confidence_interval_applicator.ConfidenceIntervalApplicator._add_quantiles_to_forecast_quantile_regression"
     )
     @patch(
-        "openstef.model.confidence_interval_applicator.ConfidenceIntervalApplicator._add_standard_deviation_to_forecast"
+        "forecasting_engine.openstef.model.confidence_interval_applicator.ConfidenceIntervalApplicator._add_standard_deviation_to_forecast"
     )
     def test_add_confidence_interval_happy_flow_(
         self, mock_stdev_to_forecast, mock_add_quantiles

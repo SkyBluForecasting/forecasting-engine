@@ -22,6 +22,13 @@ class TestCreateForecastTask(TestCase):
         "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
     )
     def setUp(self, _get_model_uri_mock) -> None:
+
+        # TODO: Eventually fix this hacky shim. It's because we changed the import path.
+        import sys
+        import forecasting_engine.openstef as new_openstef
+
+        sys.modules["openstef"] = new_openstef  # shim for old import path
+
         self.pj, self.modelspecs = TestData.get_prediction_job_and_modelspecs(pid=307)
         self.serializer = MLflowSerializer(
             mlflow_tracking_uri="./test/unit/trained_models/mlruns"
@@ -43,7 +50,7 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(return_value=FORECAST_MOCK),
     )
     def test_create_forecast_task_happy_flow_1(self):
@@ -60,7 +67,7 @@ class TestCreateForecastTask(TestCase):
         self.assertEqual(context.mock_calls[3].args[0], FORECAST_MOCK)
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(return_value=FORECAST_MOCK),
     )
     def test_create_forecast_task_happy_flow(self):
@@ -96,7 +103,7 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_create_forecast_known_zero_flatliner(self):
@@ -120,7 +127,7 @@ class TestCreateForecastTask(TestCase):
         ), "The `write_forecast` method should not have been called."
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError()),
     )
     def test_create_forecast_known_zero_flatliner_no_model(self):
@@ -144,7 +151,7 @@ class TestCreateForecastTask(TestCase):
         ), "The `write_forecast` method should not have been called."
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_create_forecast_unexpected_zero_flatliner(self):
@@ -164,11 +171,11 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError("Model not found. First train a model!")),
     )
     @patch(
-        "openstef.tasks.create_forecast.detect_ongoing_flatliner",
+        "forecasting_engine.openstef.tasks.create_forecast.detect_ongoing_flatliner",
         MagicMock(return_value=True),
     )
     def test_create_forecast_unexpected_zero_flatliner_lookuperror(self):
@@ -188,11 +195,11 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError("Model not found. First train a model!")),
     )
     @patch(
-        "openstef.tasks.create_forecast.detect_ongoing_flatliner",
+        "forecasting_engine.openstef.tasks.create_forecast.detect_ongoing_flatliner",
         MagicMock(return_value=False),
     )
     def test_create_forecast_lookuperror(self):

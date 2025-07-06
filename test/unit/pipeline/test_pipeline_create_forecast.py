@@ -19,6 +19,13 @@ class TestCreateForecastPipeline(BaseTestCase):
     )
     def setUp(self, _get_model_uri_mock) -> None:
         super().setUp()
+
+        # TODO: Eventually fix this hacky shim. It's because we changed the import path.
+        import sys
+        import forecasting_engine.openstef as new_openstef
+
+        sys.modules["openstef"] = new_openstef  # shim for old import path
+
         self.pj = TestData.get_prediction_job(pid=307)
         self.serializer = MLflowSerializer(
             mlflow_tracking_uri="./test/unit/trained_models/mlruns"
