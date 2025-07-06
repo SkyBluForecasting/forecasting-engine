@@ -29,7 +29,7 @@ jobs:
     # Build documentation
     - name: Build documentation
       run: |
-          cp requirements.txt docs/requirements.txt &&\
+          cp requirements.txt openstef/docs/requirements.txt &&\
           printf "\npydata-sphinx-theme==0.12.0\n" >> docs/requirements.txt &&\
           printf "\njinja2==3.0.0\n" >> docs/requirements.txt &&\
           printf "\nsphinx_autodoc_typehints==1.19.4\n" >> docs/requirements.txt &&\
