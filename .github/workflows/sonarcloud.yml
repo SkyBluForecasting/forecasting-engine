@@ -52,6 +52,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Analyze with SonarCloud
         if: ${{ github.actor != 'dependabot[bot]' }}
         # You can pin the exact commit or the version.
