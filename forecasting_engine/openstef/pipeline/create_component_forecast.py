@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-import openstef.postprocessing.postprocessing as postprocessing
+import forecasting_engine.openstef.postprocessing.postprocessing as postprocessing
 from openstef import PROJECT_ROOT
 from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,

@@ -8,7 +8,7 @@ import xgboost as xgb
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from xgboost import Booster
 
-import openstef.metrics.metrics as metrics
+import forecasting_engine.openstef.metrics.metrics as metrics
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor
 
 DEFAULT_QUANTILES: tuple[float, ...] = (0.9, 0.5, 0.1)

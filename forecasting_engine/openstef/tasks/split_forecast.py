@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 
-import openstef.monitoring.teams as monitoring
+import forecasting_engine.openstef.monitoring.teams as monitoring
 from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
