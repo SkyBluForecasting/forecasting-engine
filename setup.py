@@ -34,7 +34,7 @@ def read_long_description_from_readme():
 setup(
     name="forecasting-engine",
     version="0.0.0",
-    packages=find_packages(include=["forecasting-engine", "forecasting-engine.*"]),
+    packages=find_packages(include=["forecasting_engine", "forecasting_engine.*"]),
     description="Forecasting engine",
     long_description=read_long_description_from_readme(),
     long_description_content_type="text/markdown",

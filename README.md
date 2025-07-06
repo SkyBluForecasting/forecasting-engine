@@ -16,54 +16,13 @@ This repo is designed to be deployed on an EC2 instance and serves as the backen
 
 ## What's in this repo
 
-forecasting-engine/ **Included in deployments
+forecasting_engine/ **Included in deployments
 ├── openstef/ # Core licensed forecasting logic 
 ├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. 
 ├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) 
 scripts/ # Test scripts for local testing ** NOT included in deployments
 test/ # Unit tests  ** NOT included in deployments
 
-
-# Installation
-
-## Install the forecasting-engine
-
-```shell
-pip install forecasting-engine
-```
-
-### Remark regarding installation within a **conda environment on Windows**
-
-A version of the pywin32 package will be installed as a secondary dependency along with the installation of the openstef package. Since conda relies on an old version of pywin32, the new installation can break conda's functionality. The following command can solve this issue:
-
-```shell
-pip install pywin32==300
-```
-
-For more information on this issue see the [readme of pywin32](https://github.com/mhammond/pywin32#installing-via-pip) or [this Github issue](https://github.com/mhammond/pywin32/issues/1865#issue-1212752696).
-
-## Remark regarding installation on Apple Silicon
-
-If you want to install the `forecasting-engine` package on Apple Silicon (Mac with M1-chip or newer), you can encounter issues with the dependencies, such as `xgboost`. Solution:
-
-1. Run `brew install libomp` (if you haven’t installed Homebrew: [follow instructions here](https://brew.sh/))
-2. If your interpreter can not find the `libomp` installation in `/usr/local/bin`, it is probably in `/opt/brew/Cellar`. Run:
-
-```sh
-mkdir -p /usr/local/opt/libomp/
-ln -s /opt/brew/Cellar/libomp/{your_version}/lib /usr/local/opt/libomp/lib
-```
-
-3. Uninstall `xgboost` with `pip` (`pip uninstall xgboost`) and install with `conda-forge` (`conda install -c conda-forge xgboost`)
-4. If you encounter similar issues with `lightgbm`: uninstall `lightgbm` with `pip` (`pip uninstall lightgbm`) and install later version with `conda-forge` (`conda install -c conda-forge 'lightgbm>=4.2.0'`)
-
-### Remark regarding installation with minimal XGBoost dependency
-
-It is possible to install forecasting-engine with a minimal XGBoost (CPU-only) package. This only works on x86_64 (amd64) Linux and Windows platforms. Advantage is that significantly smaller dependencies are installed. In that case run:
-
-```shell
-pip install forecasting-engine[cpu]
-```
 
 # About OpenSTEF
 
