@@ -55,7 +55,9 @@ class TestCreateBasecaseForecastTask(TestCase):
             "Skip this PredictionJob because its forecasts are posted by an external process.",
         )
 
-    @patch("openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline")
+    @patch(
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline"
+    )
     def test_create_forecast_task_train_only(
         self, create_basecase_forecast_pipeline_mock
     ):
@@ -66,7 +68,9 @@ class TestCreateBasecaseForecastTask(TestCase):
         create_basecase_forecast_task(pj, context)
         self.assertEqual(create_basecase_forecast_pipeline_mock.call_count, 0)
 
-    @patch("openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline")
+    @patch(
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline"
+    )
     def test_create_forecast_task_forecast_only(
         self, create_basecase_forecast_pipeline_mock
     ):

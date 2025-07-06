@@ -94,7 +94,7 @@ class TestTaskContext(BaseTestCase):
         ) as context:
             PredictionJobLoop(context, prediction_jobs=PREDICTION_JOBS).map(func_fail)
 
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_task_context_teams_message(self, postteamsmock):
         """Test to check that:
         if multiple exceptions are raised,

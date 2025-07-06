@@ -14,7 +14,9 @@ from forecasting_engine.openstef.pipeline import create_forecast, utils
 
 
 class TestCreateForecastPipeline(BaseTestCase):
-    @patch("openstef.model.serializer.MLflowSerializer._get_model_uri")
+    @patch(
+        "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
+    )
     def setUp(self, _get_model_uri_mock) -> None:
         super().setUp()
         self.pj = TestData.get_prediction_job(pid=307)
@@ -91,7 +93,7 @@ class TestCreateForecastPipeline(BaseTestCase):
         self.assertEqual(forecast_end, forecast_end_expected)
 
     @patch("mlflow.sklearn.load_model")
-    @patch("openstef.validation.validation.is_data_sufficient")
+    @patch("forecasting_engine.openstef.validation.validation.is_data_sufficient")
     def test_create_forecast_pipeline_incomplete_inputdata(
         self, is_data_sufficient_mock, load_mock
     ):
@@ -198,8 +200,10 @@ class TestCreateForecastPipeline(BaseTestCase):
         self.assertGreater(forecast.forecast.min(), -5)
         self.assertLess(forecast.forecast.max(), 85)
 
-    @patch("openstef.model.serializer.MLflowSerializer.load_model")
-    @patch("openstef.pipeline.create_forecast.create_forecast_pipeline_core")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
+    @patch(
+        "forecasting_engine.openstef.pipeline.create_forecast.create_forecast_pipeline_core"
+    )
     def test_create_forecast_pipeline_wrong_forecast_pid(
         self, create_forecast_pipeline_core_mock, load_mock
     ):
@@ -223,8 +227,10 @@ class TestCreateForecastPipeline(BaseTestCase):
                 self.pj, forecast_data, "./test/unit/trained_models/mlruns"
             )
 
-    @patch("openstef.model.serializer.MLflowSerializer.load_model")
-    @patch("openstef.pipeline.create_forecast.create_forecast_pipeline_core")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
+    @patch(
+        "forecasting_engine.openstef.pipeline.create_forecast.create_forecast_pipeline_core"
+    )
     def test_create_forecast_pipeline_valid_forecast_pid(
         self, create_forecast_pipeline_core_mock, load_mock
     ):

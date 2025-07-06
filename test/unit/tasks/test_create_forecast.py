@@ -18,7 +18,9 @@ FORECAST_MOCK = "forecast_mock"
 
 
 class TestCreateForecastTask(TestCase):
-    @patch("openstef.model.serializer.MLflowSerializer._get_model_uri")
+    @patch(
+        "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
+    )
     def setUp(self, _get_model_uri_mock) -> None:
         self.pj, self.modelspecs = TestData.get_prediction_job_and_modelspecs(pid=307)
         self.serializer = MLflowSerializer(
@@ -206,7 +208,7 @@ class TestCreateForecastTask(TestCase):
 
         assert e.value.args[0] == "Model not found. First train a model!"
 
-    @patch("openstef.tasks.create_forecast.create_forecast_pipeline")
+    @patch("forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline")
     def test_create_forecast_task_train_only(self, create_forecast_pipeline_mock):
         """Test happy flow of create forecast task for train only pj."""
         context = MagicMock()
@@ -215,7 +217,7 @@ class TestCreateForecastTask(TestCase):
         create_forecast_task(pj, context)
         self.assertEqual(create_forecast_pipeline_mock.call_count, 0)
 
-    @patch("openstef.tasks.create_forecast.create_forecast_pipeline")
+    @patch("forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline")
     def test_create_forecast_task_forecast_only(self, create_forecast_pipeline_mock):
         """Test happy flow of create forecast task for forecast only pj."""
         # Arrange
@@ -232,8 +234,8 @@ class TestCreateForecastTask(TestCase):
         self.assertEqual(context.mock_calls[5].args[0], FORECAST_MOCK)
 
     @patch("mlflow.sklearn.load_model")
-    @patch("openstef.model.serializer.MLflowSerializer")
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_create_forecast_task_with_context(
         self, post_teams_mock, serializer_mock, load_mock
     ):

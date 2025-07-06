@@ -62,7 +62,9 @@ class TestMLflowSerializer(BaseTestCase):
             == "./test/unit/trained_models/mlruns/893156335105023143/2ca1d126e8724852b303b256e64a6c4f/artifacts/model/"
         )
 
-    @patch("openstef.data_classes.model_specifications.ModelSpecificationDataClass")
+    @patch(
+        "forecasting_engine.openstef.data_classes.model_specifications.ModelSpecificationDataClass"
+    )
     @patch("mlflow.search_runs")
     @patch("mlflow.sklearn.load_model")
     def test_serializer_load_model_feature_names_keyerror(
@@ -86,7 +88,9 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertIsInstance(modelspecs, ModelSpecificationDataClass)
         self.assertEqual(modelspecs.feature_names, None)
 
-    @patch("openstef.data_classes.model_specifications.ModelSpecificationDataClass")
+    @patch(
+        "forecasting_engine.openstef.data_classes.model_specifications.ModelSpecificationDataClass"
+    )
     @patch("mlflow.search_runs")
     @patch("mlflow.sklearn.load_model")
     def test_serializer_load_model_feature_names_attributeerror(
@@ -112,7 +116,9 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertIsInstance(modelspecs, ModelSpecificationDataClass)
         self.assertEqual(modelspecs.feature_names, None)
 
-    @patch("openstef.data_classes.model_specifications.ModelSpecificationDataClass")
+    @patch(
+        "forecasting_engine.openstef.data_classes.model_specifications.ModelSpecificationDataClass"
+    )
     @patch("mlflow.search_runs")
     @patch("mlflow.sklearn.load_model")
     def test_serializer_load_model_feature_names_jsonerror(
@@ -139,7 +145,9 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertIsInstance(modelspecs, ModelSpecificationDataClass)
         self.assertEqual(modelspecs.feature_names, None)
 
-    @patch("openstef.data_classes.model_specifications.ModelSpecificationDataClass")
+    @patch(
+        "forecasting_engine.openstef.data_classes.model_specifications.ModelSpecificationDataClass"
+    )
     @patch("mlflow.search_runs")
     @patch("mlflow.sklearn.load_model")
     def test_serializer_load_model_feature_modules_attributeerror(
@@ -165,7 +173,9 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertIsInstance(modelspecs, ModelSpecificationDataClass)
         self.assertFalse(modelspecs.feature_modules)
 
-    @patch("openstef.data_classes.model_specifications.ModelSpecificationDataClass")
+    @patch(
+        "forecasting_engine.openstef.data_classes.model_specifications.ModelSpecificationDataClass"
+    )
     @patch("mlflow.search_runs")
     @patch("mlflow.sklearn.load_model")
     def test_serializer_load_model_feature_modules_jsonerror(
@@ -192,7 +202,7 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertIsInstance(modelspecs, ModelSpecificationDataClass)
         self.assertFalse(modelspecs.feature_modules)
 
-    @patch("openstef.model.serializer.MLflowSerializer._find_models")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer._find_models")
     def test_serializer_load_model_empty_df_raise_lookuperror(self, mock_find_models):
         mock_find_models.return_value = pd.DataFrame()
         self.assertRaises(
@@ -233,7 +243,7 @@ class TestMLflowSerializer(BaseTestCase):
         )
         self.assertEqual(mock_log_model.call_args.kwargs["artifact_path"], "model")
 
-    @patch("openstef.model.serializer.MLflowSerializer._find_models")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer._find_models")
     def test_serializer_get_model_age_no_hyperparameter_optimization(
         self, mock_find_models
     ):
@@ -250,7 +260,7 @@ class TestMLflowSerializer(BaseTestCase):
         ).get_model_age("307", hyperparameter_optimization_only=False)
         self.assertEqual(days, 2)
 
-    @patch("openstef.model.serializer.MLflowSerializer._find_models")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer._find_models")
     def test_serializer_get_model_age_hyperparameter_optimization(
         self, mock_find_models
     ):
@@ -271,7 +281,7 @@ class TestMLflowSerializer(BaseTestCase):
         self.assertGreater(days, 7)
         self.assertEqual(days, 8)
 
-    @patch("openstef.model.serializer.MLflowSerializer._find_models")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer._find_models")
     def test_serializer_get_model_age_empty_df(self, mock_find_models):
         models_df = pd.DataFrame()
         mock_find_models.return_value = models_df

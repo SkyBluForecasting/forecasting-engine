@@ -42,7 +42,7 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
             "input_data_multi_horizon_features.csv"
         )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
     def test_optimize_hyperparameters_pipeline(self, save_model_mock):
         """Also check if non-default quantiles are processed correctly"""
         pj = self.pj
@@ -129,7 +129,10 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
         self.assertIsInstance(result[4], int)
         self.assertIsInstance(result[5], dict)
 
-    @patch("openstef.validation.validation.is_data_sufficient", return_value=False)
+    @patch(
+        "forecasting_engine.openstef.validation.validation.is_data_sufficient",
+        return_value=False,
+    )
     def test_optimize_hyperparameters_pipeline_insufficient_data(self, mock):
         # if data is not sufficient a InputDataInsufficientError should be raised
         with self.assertRaises(InputDataInsufficientError):
@@ -160,7 +163,7 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
                 n_trials=2,
             )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
     def test_optimize_hyperparameters_pipeline_quantile_regressor(
         self, save_model_mock
     ):

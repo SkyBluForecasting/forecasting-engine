@@ -11,7 +11,7 @@ import pandas as pd
 from forecasting_engine.openstef.monitoring import teams
 
 
-@patch("openstef.monitoring.teams.pymsteams")
+@patch("forecasting_engine.openstef.monitoring.teams.pymsteams")
 class TestTeams(BaseTestCase):
     def setUp(self):
         super().setUp()
