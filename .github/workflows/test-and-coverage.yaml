@@ -83,4 +83,4 @@ jobs:
     - name: Display coverage summary
       run: |
         pip install coverage
-        coverage report -i coverage-data/.coverage --fail-under=85
+        coverage report --fail-under=85
