@@ -15,7 +15,6 @@ jobs:
         python-version: [3.11]
 
     steps:
-    # Checkout
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -31,20 +30,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
-    
+
     - name: Check formatting using black
       uses: rickstaa/action-black@v1
       id: action_black
       with:
-        black_args: "."  # Arguments to pass to black
+        black_args: "."
 
     - name: Lint
       run: |
         pip install flake8
-        # Stop build on a couple more serious violations
-        # See https://flake8.pycqa.org/en/latest/user/error-codes.html for more details
         flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
-        # Only print warnings on all other errors
         flake8 . --count --exit-zero --show-source --statistics
 
     - name: Unit test with pytest
@@ -60,18 +56,12 @@ jobs:
         pip install coverage
         coverage combine
 
-    - name: Confirm file exists before upload
-      run: |
-        echo "Files in current directory:"
-        ls -la
-        [ -f .coverage ] && echo "✅ .coverage exists" || echo "❌ .coverage missing"
-    
-    - name: Move .coverage into artifacts folder
+    - name: Save coverage artifacts
       run: |
         mkdir -p coverage-artifacts
         mv .coverage coverage-artifacts/
-  
-    - name: Upload coverage data file
+
+    - name: Upload .coverage data
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
@@ -79,7 +69,7 @@ jobs:
         retention-days: 14
         include-hidden-files: true
 
-    - name: Upload coverage report
+    - name: Upload coverage.xml
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
@@ -87,27 +77,30 @@ jobs:
         retention-days: 14
 
   coverage:
+    name: Report Coverage
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
-    defaults:
-      run:
-        working-directory: forecasting-engine  # ✅ applies to *all* `run:` steps
 
     steps:
     - name: Checkout source code
       uses: actions/checkout@v4
 
-    - name: Download coverage data
+    - name: Download .coverage file
       uses: actions/download-artifact@v4
       with:
         name: coverage-data
 
-    - name: Move .coverage file
+    - name: Move .coverage file to root
       run: |
-        mv ../coverage-artifacts/.coverage .  # ✅ go up one level to access artifact
+        mv coverage-artifacts/.coverage .
 
-    - name: Display coverage summary
+    - name: Install source for coverage resolution
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -e .
+
+    - name: Generate coverage summary
       run: |
         pip install coverage
         coverage report --fail-under=85 --ignore-errors
