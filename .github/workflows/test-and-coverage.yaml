@@ -89,10 +89,20 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
 
     steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
     - name: Download coverage data
       uses: actions/download-artifact@v4
       with:
         name: coverage-data
+
+    - name: List files to verify source presence
+      run: |
+        echo "Current dir:"
+        pwd
+        echo "Listing Python source files:"
+        find . -name "*.py"
 
     - name: Display coverage summary
       run: |
