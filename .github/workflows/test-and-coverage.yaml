@@ -90,6 +90,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: forecasting-engine  # ✅ applies to *all* `run:` steps
 
     steps:
     - name: Checkout source code
@@ -100,14 +103,11 @@ jobs:
       with:
         name: coverage-data
 
-    - name: List files to verify source presence
+    - name: Move .coverage file
       run: |
-        echo "Current dir:"
-        pwd
-        echo "Listing Python source files:"
-        find . -name "*.py"
+        mv ../coverage-artifacts/.coverage .  # ✅ go up one level to access artifact
 
     - name: Display coverage summary
       run: |
         pip install coverage
-        coverage report --fail-under=85  --ignore-errors
+        coverage report --fail-under=85 --ignore-errors
