@@ -43,35 +43,28 @@ jobs:
       run: |
         flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
         flake8 . --count --exit-zero --show-source --statistics
-    
+
     - name: Run tests with coverage
+      env:
+        COVERAGE_PROCESS_START: ${{ github.workspace }}/.coveragerc
       run: |
-        PYTHONPATH=${{ github.workspace }} pytest \
-          --rootdir=${{ github.workspace }} \
-          --cov=forecasting_engine \
+        pytest \
+          --cov=$(pwd)/forecasting_engine \
           --cov-config=${{ github.workspace }}/.coveragerc \
           --cov-report=xml \
           --cov-report=term-missing \
           --cov-branch test/
-      working-directory: ${{ github.workspace }}
 
-    - name: Fix coverage.xml paths (GitHub Actions workaround)
+    - name: Show coverage debug info
       run: |
-        sed -i 's|/home/runner/work/forecasting-engine/forecasting-engine/|/github/workspace/|g' coverage.xml || true
-
-    - name: Show .coverage debug info
-      run: |
-        pip install coverage
         coverage debug sys
         coverage debug config
 
     - name: Combine coverage files (if needed)
-      run: |
-        coverage combine
+      run: coverage combine
 
     - name: Display coverage summary
-      run: |
-        coverage report --fail-under=85 --ignore-errors
+      run: coverage report --fail-under=85 --ignore-errors
 
     - name: Upload .coverage data
       uses: actions/upload-artifact@v4

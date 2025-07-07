@@ -1,6 +1,8 @@
 [run]
-source = forecasting_engine
 branch = True
+source =
+    forecasting_engine
+    .
 relative_files = True
 
 [report]
@@ -12,3 +14,4 @@ show_missing = True
 source =
     forecasting_engine
     */forecasting-engine/forecasting_engine
+    .
