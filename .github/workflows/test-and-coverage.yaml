@@ -64,9 +64,6 @@ jobs:
         coverage debug sys
         coverage debug config
 
-    - name: Combine coverage files (if needed)
-      run: coverage combine
-
     - name: Display coverage summary
       run: coverage report --fail-under=85 --ignore-errors
 
