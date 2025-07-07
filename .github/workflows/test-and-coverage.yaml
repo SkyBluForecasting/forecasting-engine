@@ -91,9 +91,14 @@ jobs:
       with:
         name: coverage-data
 
+    - name: List contents of downloaded coverage-data
+      run: |
+        echo "Listing:"
+        find coverage-data
+
     - name: Move .coverage file to root
       run: |
-        mv coverage-data/.coverage .
+        mv coverage-data/coverage-artifacts/.coverage .
 
     - name: Install source for coverage resolution
       run: |
