@@ -44,16 +44,13 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
         flake8 . --count --exit-zero --show-source --statistics
 
-    - name: Run tests with coverage
+    - name: Run tests with coverage + trace debug
       run: |
-        pytest \
-          --rootdir=. \
-          --cov=forecasting_engine \
-          --cov-config=.coveragerc \
-          --cov-report=xml \
-          --cov-report=term-missing \
-          --cov-branch test/
-
+        pip install coverage pytest
+        PYTHONPATH=${{ github.workspace }} coverage run --debug=trace --source=forecasting_engine -m pytest test/
+        coverage report -m
+        coverage xml
+      
     - name: Fix coverage paths for CI
       run: |
         sed -i 's|/home/runner/work/forecasting-engine/forecasting-engine/|/github/workspace/|g' coverage.xml
