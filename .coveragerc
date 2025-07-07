@@ -1,0 +1,9 @@
+[run]
+source = forecasting_engine
+branch = True
+relative_files = True
+
+[report]
+fail_under = 85
+skip_covered = True
+show_missing = True

@@ -50,7 +50,10 @@ jobs:
     - name: Unit test with pytest
       run: |
         pip install -r test-requirements.txt
-        pytest --cov=forecasting_engine/ --cov-branch --cov-report=xml:coverage.xml --cov-report=term-missing test/ --junitxml=pytest-report.xml
+        pytest --cov --cov-config=.coveragerc \
+          --cov-report=xml:coverage.xml \
+          --cov-report=term-missing \
+          test/ --junitxml=pytest-report.xml
 
     - name: Combine coverage data files
       run: |
