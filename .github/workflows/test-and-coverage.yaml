@@ -47,7 +47,7 @@ jobs:
     - name: Run tests with coverage + trace debug
       run: |
         pip install coverage pytest
-        PYTHONPATH=${{ github.workspace }} coverage run --debug=trace --source=forecasting_engine -m pytest test/
+        PYTHONPATH=${{ github.workspace }} coverage run --source=forecasting_engine -m pytest test/
         coverage report -m
         coverage xml
       
