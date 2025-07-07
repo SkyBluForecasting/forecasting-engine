@@ -32,6 +32,7 @@ jobs:
         pip install -r requirements.txt
         pip install -r test-requirements.txt
         pip install flake8 coverage
+        pip install -e .
 
     - name: Check formatting using black
       uses: rickstaa/action-black@v1
@@ -46,10 +47,16 @@ jobs:
 
     - name: Run unit tests and generate coverage
       run: |
-        pytest --cov --cov-config=.coveragerc \
+        pytest --cov=forecasting_engine --cov-config=.coveragerc \
                --cov-report=xml:coverage.xml \
                --cov-report=term-missing \
                test/ --junitxml=pytest-report.xml
+
+    - name: Show .coverage debug info
+      run: |
+        pip install coverage
+        coverage debug sys
+        coverage debug config
 
     - name: Combine coverage files (if needed)
       run: |
