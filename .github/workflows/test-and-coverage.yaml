@@ -93,7 +93,7 @@ jobs:
 
     - name: Move .coverage file to root
       run: |
-        mv coverage-artifacts/.coverage .
+        mv coverage-data/.coverage .
 
     - name: Install source for coverage resolution
       run: |
