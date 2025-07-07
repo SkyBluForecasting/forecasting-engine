@@ -44,7 +44,7 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
         flake8 . --count --exit-zero --show-source --statistics
 
-    - name: Run tests with coverage + trace debug
+    - name: Run tests with coverage
       run: |
         pip install coverage pytest
         PYTHONPATH=${{ github.workspace }} coverage run --source=forecasting_engine -m pytest test/
@@ -58,21 +58,9 @@ jobs:
     - name: Check final coverage summary
       run: |
         coverage report --show-missing
-  
-    - name: Show coverage debug info
-      run: |
-        coverage debug sys
-        coverage debug config
 
     - name: Display coverage summary
       run: coverage report --fail-under=85 --ignore-errors
-
-    - name: Upload .coverage data
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-data
-        path: .coverage
-        retention-days: 14
 
     - name: Upload coverage.xml
       uses: actions/upload-artifact@v4
