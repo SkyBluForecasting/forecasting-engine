@@ -94,9 +94,8 @@ jobs:
       with:
         name: coverage-data
 
-    - name: Move .coverage to working dir
-      run: |
-        mv coverage-data/.coverage ./
+    - name: Debug check files after download
+      run: ls -la
 
     - name: Display coverage summary
       run: |
