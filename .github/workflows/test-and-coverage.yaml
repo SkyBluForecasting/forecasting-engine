@@ -46,8 +46,9 @@ jobs:
     
     - name: Run tests with coverage
       run: |
+        # Ensure pytest picks up the correct root
         PYTHONPATH=${{ github.workspace }} pytest \
-          --rootdir=${{ github.workspace }} \  # <-- ADD THIS LINE
+          --rootdir=${{ github.workspace }} \
           --cov=forecasting_engine \
           --cov-config=${{ github.workspace }}/.coveragerc \
           --cov-report=xml \
