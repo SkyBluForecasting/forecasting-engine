@@ -90,15 +90,15 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-data
-
-    - name: List contents of downloaded coverage-data
+    
+    - name: List contents of workspace
       run: |
-        echo "Listing:"
-        find coverage-data
-
+        echo "Listing workspace contents:"
+        find .
+    
     - name: Move .coverage file to root
       run: |
-        mv coverage-data/coverage-artifacts/.coverage .
+        mv coverage-artifacts/.coverage .
 
     - name: Install source for coverage resolution
       run: |
