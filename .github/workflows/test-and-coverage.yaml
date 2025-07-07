@@ -46,7 +46,6 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        # Ensure pytest picks up the correct root
         PYTHONPATH=${{ github.workspace }} pytest \
           --rootdir=${{ github.workspace }} \
           --cov=forecasting_engine \
@@ -55,6 +54,10 @@ jobs:
           --cov-report=term-missing \
           --cov-branch test/
       working-directory: ${{ github.workspace }}
+
+    - name: Fix coverage.xml paths (GitHub Actions workaround)
+      run: |
+        sed -i 's|/home/runner/work/forecasting-engine/forecasting-engine/|/github/workspace/|g' coverage.xml || true
 
     - name: Show .coverage debug info
       run: |
