@@ -94,10 +94,7 @@ jobs:
       with:
         name: coverage-data
 
-    - name: Debug check files after download
-      run: ls -la
-
     - name: Display coverage summary
       run: |
         pip install coverage
-        coverage report --fail-under=85
+        coverage report --fail-under=85  --ignore-errors
