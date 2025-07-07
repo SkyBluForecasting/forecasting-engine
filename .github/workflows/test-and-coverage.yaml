@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: Test and Coverage
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,6 +30,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.txt
+        pip install -r test-requirements.txt
+        pip install flake8 coverage
 
     - name: Check formatting using black
       uses: rickstaa/action-black@v1
@@ -39,35 +41,30 @@ jobs:
 
     - name: Lint
       run: |
-        pip install flake8
         flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
         flake8 . --count --exit-zero --show-source --statistics
 
-    - name: Unit test with pytest
+    - name: Run unit tests and generate coverage
       run: |
-        pip install -r test-requirements.txt
         pytest --cov --cov-config=.coveragerc \
-          --cov-report=xml:coverage.xml \
-          --cov-report=term-missing \
-          test/ --junitxml=pytest-report.xml
+               --cov-report=xml:coverage.xml \
+               --cov-report=term-missing \
+               test/ --junitxml=pytest-report.xml
 
-    - name: Combine coverage data files
+    - name: Combine coverage files (if needed)
       run: |
-        pip install coverage
         coverage combine
 
-    - name: Save coverage artifacts
+    - name: Display coverage summary
       run: |
-        mkdir -p coverage-artifacts
-        mv .coverage coverage-artifacts/
+        coverage report --fail-under=85 --ignore-errors
 
     - name: Upload .coverage data
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
-        path: coverage-artifacts/
+        path: .coverage
         retention-days: 14
-        include-hidden-files: true
 
     - name: Upload coverage.xml
       uses: actions/upload-artifact@v4
@@ -75,37 +72,3 @@ jobs:
         name: coverage-report
         path: coverage.xml
         retention-days: 14
-
-  coverage:
-    name: Report Coverage
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
-
-    steps:
-    - name: Checkout source code
-      uses: actions/checkout@v4
-
-    - name: Download .coverage file
-      uses: actions/download-artifact@v4
-      with:
-        name: coverage-data
-    
-    - name: List contents of workspace
-      run: |
-        echo "Listing workspace contents:"
-        find .
-    
-    - name: Move .coverage file to root
-      run: |
-        mv coverage-artifacts/.coverage .
-
-    - name: Install source for coverage resolution
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -e .
-
-    - name: Generate coverage summary
-      run: |
-        pip install coverage
-        coverage report --fail-under=85 --ignore-errors
