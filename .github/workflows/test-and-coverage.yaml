@@ -72,8 +72,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-data
-        path: coverage-artifacts/.coverage
+        path: coverage-artifacts/
         retention-days: 14
+        include-hidden-files: true
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
