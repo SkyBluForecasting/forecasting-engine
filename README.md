@@ -6,22 +6,58 @@ SPDX-License-Identifier: MPL-2.0
 
 # Forecasting Engine
 
-The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components for:
-
-- Automated forecasting via AWS SQS queue polling
-- Integrating with S3 to pull forecasting input data and push generated forecasts 
-- Scheduled training and forecast generation jobs
+The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS S3.
 
 This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
 
 ## What's in this repo
 
+```
 forecasting_engine/ **Included in deployments
 ├── openstef/ # Core licensed forecasting logic 
 ├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. 
 ├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) 
 scripts/ # Test scripts for local testing ** NOT included in deployments
 test/ # Unit tests  ** NOT included in deployments
+```
+
+## Prerequisites
+
+- Python 3.11 or higher
+- AWS credentials configured (for S3 access)
+- pip (Python package manager)
+- Docker (optional, for containerized deployment)
+
+
+## Local Development Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/mfavit/forecasting-engine.git
+cd forecasting-engine
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+pip install -r test-requirements.txt
+```
+
+4. Create a `.env` file in the root directory with your AWS IAM configuration.
+
+```bash
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_DEFAULT_REGION=us-east-2
+S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
+```
 
 
 # About OpenSTEF
