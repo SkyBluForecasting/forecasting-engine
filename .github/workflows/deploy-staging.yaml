@@ -18,13 +18,26 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Log checkout success
+        run: |
+            echo "✅ Checkout step completed."
+            echo "Current directory content:"
+            ls -la
+
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
+
+      - name: Log SSH key setup
+        run: |
+            echo "✅ SSH key has been added to ssh-agent."
+            ssh-add -l || echo "⚠️ No SSH keys loaded."
+
       - name: Copy only needed files to EC2
         run: |
+            set -x
             rsync -avz --delete \
                 --exclude='.git' \
                 --exclude='scripts' \
