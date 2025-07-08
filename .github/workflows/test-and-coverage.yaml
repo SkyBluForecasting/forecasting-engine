@@ -60,7 +60,7 @@ jobs:
         coverage report --show-missing
 
     - name: Display coverage summary
-      run: coverage report --fail-under=85 --ignore-errors
+      run: coverage report --fail-under=87 --ignore-errors
 
     - name: Upload coverage.xml
       uses: actions/upload-artifact@v4
