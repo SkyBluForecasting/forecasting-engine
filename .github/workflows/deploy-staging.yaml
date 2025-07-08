@@ -1,0 +1,69 @@
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to deploy'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
+
+      - name: Copy only needed files to EC2
+        run: |
+            rsync -avz --delete \
+                --exclude='.git' \
+                --exclude='scripts' \
+                -e "ssh -o StrictHostKeyChecking=no" \
+                forecasting_engine/ requirements.txt Dockerfile \
+                ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
+        
+      - name: Upload .env file to EC2 root folder (~/forecasting-engine)
+        run: |
+          echo "${{ secrets.ENV_FILE_STAGING }}" > temp.env
+          scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
+          rm temp.env
+
+      - name: Confirm .env exists on EC2 root folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
+            'ls -l ~/forecasting-engine/.env && head -n 5 ~/forecasting-engine/.env'
+
+      - name: SSH into EC2 and restart Docker container
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            set -e
+            cd ~/forecasting-engine
+
+            echo "--- CONTENTS OF ~/forecasting-engine ---"
+            ls -la
+
+            echo "--- STOPPING old Docker container if it exists ---"
+            docker stop forecasting-engine || true
+            docker rm forecasting-engine || true
+            docker rmi forecasting-engine || true
+
+            echo "--- BUILDING Docker image ---"
+            docker build -t forecasting-engine .
+
+            echo "--- RUNNING container ---"
+            docker run -d \
+              --name forecasting-engine \
+              --env-file .env \
+              -p 80:8000 \
+              forecasting-engine
+          EOF
