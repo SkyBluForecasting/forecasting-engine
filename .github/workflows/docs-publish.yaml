@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501
-#
-# SPDX-License-Identifier: MPL-2.0
 name: Deploy Sphinx documentation to Pages
 
 on:
@@ -24,21 +21,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies and generate .rst files
+      - name: Install minimal dependencies and generate .rst files
         run: |
-          cp requirements.txt forecasting_engine/openstef/docs/requirements.txt
-          printf "\npydata-sphinx-theme==0.12.0\n" >> forecasting_engine/openstef/docs/requirements.txt
-          printf "\njinja2==3.0.0\n" >> forecasting_engine/openstef/docs/requirements.txt
-          printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting_engine/openstef/docs/requirements.txt
-          printf "\nmkdocs==1.2.3\n" >> forecasting_engine/openstef/docs/requirements.txt
-          pip install -r forecasting_engine/openstef/docs/requirements.txt
+          pip install sphinx-autodoc-typehints
           sphinx-apidoc -o forecasting_engine/openstef/docs forecasting_engine/openstef
 
       - name: Build and commit Sphinx docs to GitHub Pages
         uses: sphinx-notes/pages@v2
         with:
           docs_dir: forecasting_engine/openstef/docs
-          requirements_path: forecasting_engine/openstef/docs/requirements.txt
 
       - name: Push changes to gh-pages branch
         uses: ad-m/github-push-action@v0.6.0
