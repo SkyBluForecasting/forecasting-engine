@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: MPL-2.0
 name: Docs Check
 
-# Check docs when directly editing develop or main
-# and on pull request
 on:
   push:
     branches:
@@ -17,22 +15,25 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-    # Checkout
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Setup python version
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    # Build documentation
-    - name: Build documentation
-      run: |
-          cp requirements.txt forecasting_engine/openstef/docs/requirements.txt &&\
-          printf "\npydata-sphinx-theme==0.12.0\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
-          printf "\njinja2==3.0.0\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
-          printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
-          printf "\nmkdocs==1.2.3\n" >> forecasting_engine/openstef/docs/requirements.txt &&\
-          pip install -r forecasting_engine/openstef/docs/requirements.txt &&\
-          sphinx-apidoc -o docs forecasting_engine/openstef
+      - name: Install documentation dependencies
+        run: |
+          cp requirements.txt forecasting_engine/openstef/docs/requirements.txt
+          printf "\npydata-sphinx-theme==0.12.0\n" >> forecasting_engine/openstef/docs/requirements.txt
+          printf "\njinja2==3.0.0\n" >> forecasting_engine/openstef/docs/requirements.txt
+          printf "\nsphinx_autodoc_typehints==1.19.4\n" >> forecasting_engine/openstef/docs/requirements.txt
+          printf "\nmkdocs==1.2.3\n" >> forecasting_engine/openstef/docs/requirements.txt
+          pip install -r forecasting_engine/openstef/docs/requirements.txt
+
+      - name: Generate Sphinx .rst files
+        run: sphinx-apidoc -o forecasting_engine/openstef/docs forecasting_engine/openstef
+
+      - name: Build Sphinx documentation
+        run: sphinx-build -b html forecasting_engine/openstef/docs forecasting_engine/openstef/docs/_build/html
