@@ -29,7 +29,8 @@ jobs:
       - name: Build and commit Sphinx docs to GitHub Pages
         uses: sphinx-notes/pages@v2
         with:
-          docs_dir: forecasting_engine/openstef/docs
+          documentation_path: forecasting_engine/openstef/docs
+          requirements_path: forecasting_engine/openstef/docs/requirements.txt
 
       - name: Push changes to gh-pages branch
         uses: ad-m/github-push-action@v0.6.0
