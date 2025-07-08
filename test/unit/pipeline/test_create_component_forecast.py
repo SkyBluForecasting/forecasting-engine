@@ -11,8 +11,8 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
 
-from openstef.model.regressors.dazls import Dazls
-from openstef.pipeline.create_component_forecast import (
+from forecasting_engine.openstef.model.regressors.dazls import Dazls
+from forecasting_engine.openstef.pipeline.create_component_forecast import (
     create_components_forecast_pipeline,
 )
 
@@ -29,7 +29,8 @@ class TestComponentForecast(BaseTestCase):
         """
 
         new_model_file = str(
-            PROJECT_ROOT / "openstef/data/dazls_model_3.4.24/dazls_stored_3.4.24_"
+            PROJECT_ROOT
+            / "forecasting_engine/openstef/data/dazls_model_3.4.24/dazls_stored_3.4.24_"
         )
 
         dazls_model = Dazls()

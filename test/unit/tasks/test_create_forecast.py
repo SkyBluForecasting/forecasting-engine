@@ -8,18 +8,27 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import openstef.tasks.create_forecast as task
-from openstef.enums import PipelineType
-from openstef.exceptions import InputDataOngoingFlatlinerError
-from openstef.model.serializer import MLflowSerializer
-from openstef.tasks.create_forecast import create_forecast_task
+import forecasting_engine.openstef.tasks.create_forecast as task
+from forecasting_engine.openstef.enums import PipelineType
+from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.tasks.create_forecast import create_forecast_task
 
 FORECAST_MOCK = "forecast_mock"
 
 
 class TestCreateForecastTask(TestCase):
-    @patch("openstef.model.serializer.MLflowSerializer._get_model_uri")
+    @patch(
+        "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
+    )
     def setUp(self, _get_model_uri_mock) -> None:
+
+        # TODO: Eventually fix this hacky shim. It's because we changed the import path.
+        import sys
+        import forecasting_engine.openstef as new_openstef
+
+        sys.modules["openstef"] = new_openstef  # shim for old import path
+
         self.pj, self.modelspecs = TestData.get_prediction_job_and_modelspecs(pid=307)
         self.serializer = MLflowSerializer(
             mlflow_tracking_uri="./test/unit/trained_models/mlruns"
@@ -41,7 +50,7 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(return_value=FORECAST_MOCK),
     )
     def test_create_forecast_task_happy_flow_1(self):
@@ -58,7 +67,7 @@ class TestCreateForecastTask(TestCase):
         self.assertEqual(context.mock_calls[3].args[0], FORECAST_MOCK)
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(return_value=FORECAST_MOCK),
     )
     def test_create_forecast_task_happy_flow(self):
@@ -94,7 +103,7 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_create_forecast_known_zero_flatliner(self):
@@ -118,7 +127,7 @@ class TestCreateForecastTask(TestCase):
         ), "The `write_forecast` method should not have been called."
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError()),
     )
     def test_create_forecast_known_zero_flatliner_no_model(self):
@@ -142,7 +151,7 @@ class TestCreateForecastTask(TestCase):
         ), "The `write_forecast` method should not have been called."
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_create_forecast_unexpected_zero_flatliner(self):
@@ -162,11 +171,11 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError("Model not found. First train a model!")),
     )
     @patch(
-        "openstef.tasks.create_forecast.detect_ongoing_flatliner",
+        "forecasting_engine.openstef.tasks.create_forecast.detect_ongoing_flatliner",
         MagicMock(return_value=True),
     )
     def test_create_forecast_unexpected_zero_flatliner_lookuperror(self):
@@ -186,11 +195,11 @@ class TestCreateForecastTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.create_forecast.create_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline",
         MagicMock(side_effect=LookupError("Model not found. First train a model!")),
     )
     @patch(
-        "openstef.tasks.create_forecast.detect_ongoing_flatliner",
+        "forecasting_engine.openstef.tasks.create_forecast.detect_ongoing_flatliner",
         MagicMock(return_value=False),
     )
     def test_create_forecast_lookuperror(self):
@@ -206,7 +215,7 @@ class TestCreateForecastTask(TestCase):
 
         assert e.value.args[0] == "Model not found. First train a model!"
 
-    @patch("openstef.tasks.create_forecast.create_forecast_pipeline")
+    @patch("forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline")
     def test_create_forecast_task_train_only(self, create_forecast_pipeline_mock):
         """Test happy flow of create forecast task for train only pj."""
         context = MagicMock()
@@ -215,7 +224,7 @@ class TestCreateForecastTask(TestCase):
         create_forecast_task(pj, context)
         self.assertEqual(create_forecast_pipeline_mock.call_count, 0)
 
-    @patch("openstef.tasks.create_forecast.create_forecast_pipeline")
+    @patch("forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline")
     def test_create_forecast_task_forecast_only(self, create_forecast_pipeline_mock):
         """Test happy flow of create forecast task for forecast only pj."""
         # Arrange
@@ -232,8 +241,8 @@ class TestCreateForecastTask(TestCase):
         self.assertEqual(context.mock_calls[5].args[0], FORECAST_MOCK)
 
     @patch("mlflow.sklearn.load_model")
-    @patch("openstef.model.serializer.MLflowSerializer")
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_create_forecast_task_with_context(
         self, post_teams_mock, serializer_mock, load_mock
     ):

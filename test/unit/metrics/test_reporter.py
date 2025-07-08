@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import plotly.graph_objects as go
 
-from openstef.metrics.reporter import Report, Reporter
+from forecasting_engine.openstef.metrics.reporter import Report, Reporter
 
 
 class TestReport(unittest.TestCase):

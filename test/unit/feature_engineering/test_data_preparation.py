@@ -8,12 +8,16 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from openstef.feature_engineering.data_preparation import LegacyDataPreparation
-from openstef.model.serializer import MLflowSerializer
+from forecasting_engine.openstef.feature_engineering.data_preparation import (
+    LegacyDataPreparation,
+)
+from forecasting_engine.openstef.model.serializer import MLflowSerializer
 
 
 class TestDataPreparation(TestCase):
-    @patch("openstef.model.serializer.MLflowSerializer._get_model_uri")
+    @patch(
+        "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
+    )
     def setUp(self, _get_model_uri_mock) -> None:
         self.pj, self.model_specs = TestData.get_prediction_job_and_modelspecs(pid=307)
         self.input_data = TestData.load("input_data.csv")

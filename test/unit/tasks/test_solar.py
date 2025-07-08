@@ -6,7 +6,9 @@ from test.unit.utils.base import BaseTestCase
 from test.unit.utils.data import TestData
 from unittest.mock import MagicMock
 
-from openstef.tasks.create_solar_forecast import make_solar_prediction_pj
+from forecasting_engine.openstef.tasks.create_solar_forecast import (
+    make_solar_prediction_pj,
+)
 
 
 class TestSolar(BaseTestCase):

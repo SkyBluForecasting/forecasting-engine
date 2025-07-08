@@ -9,8 +9,11 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 
-from openstef.exceptions import NoPredictedLoadError, NoRealisedLoadError
-from openstef.tasks.calculate_kpi import calc_kpi_for_specific_pid
+from forecasting_engine.openstef.exceptions import (
+    NoPredictedLoadError,
+    NoRealisedLoadError,
+)
+from forecasting_engine.openstef.tasks.calculate_kpi import calc_kpi_for_specific_pid
 
 # Get test data
 predicted_load = TestData.load("calculate_kpi_predicted_load.csv")

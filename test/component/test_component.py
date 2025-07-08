@@ -6,9 +6,13 @@ import os
 import unittest
 from test.unit.utils.data import TestData
 
-from openstef.pipeline.create_forecast import create_forecast_pipeline_core
-from openstef.pipeline.optimize_hyperparameters import optimize_hyperparameters_pipeline
-from openstef.pipeline.train_model import train_pipeline_common
+from forecasting_engine.openstef.pipeline.create_forecast import (
+    create_forecast_pipeline_core,
+)
+from forecasting_engine.openstef.pipeline.optimize_hyperparameters import (
+    optimize_hyperparameters_pipeline,
+)
+from forecasting_engine.openstef.pipeline.train_model import train_pipeline_common
 
 
 class TestComponent(unittest.TestCase):

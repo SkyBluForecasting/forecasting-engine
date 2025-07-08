@@ -9,7 +9,9 @@ from test.unit.utils.data import TestData
 import numpy as np
 import pandas as pd
 
-from openstef.feature_engineering.lag_features import generate_non_trivial_lag_times
+from forecasting_engine.openstef.feature_engineering.lag_features import (
+    generate_non_trivial_lag_times,
+)
 
 
 class TestApplyFeaturesAditionalMinuteSpace(BaseTestCase):

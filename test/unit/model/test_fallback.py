@@ -8,7 +8,7 @@ from test.unit.utils.data import TestData
 
 import numpy as np
 
-from openstef.model.fallback import generate_fallback
+from forecasting_engine.openstef.model.fallback import generate_fallback
 
 
 class TestFallback(BaseTestCase):

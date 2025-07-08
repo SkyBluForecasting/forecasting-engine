@@ -5,7 +5,9 @@ import unittest
 
 import pandas as pd
 
-from openstef.model.standard_deviation_generator import StandardDeviationGenerator
+from forecasting_engine.openstef.model.standard_deviation_generator import (
+    StandardDeviationGenerator,
+)
 
 
 class MockModel:

@@ -10,11 +10,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from openstef.enums import PipelineType
-from openstef.exceptions import InputDataOngoingFlatlinerError
-from openstef.tasks.train_model import TRAINING_PERIOD_DAYS
-from openstef.tasks.train_model import main as task_main
-from openstef.tasks.train_model import train_model_task
+from forecasting_engine.openstef.enums import PipelineType
+from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
+from forecasting_engine.openstef.tasks.train_model import TRAINING_PERIOD_DAYS
+from forecasting_engine.openstef.tasks.train_model import main as task_main
+from forecasting_engine.openstef.tasks.train_model import train_model_task
 
 
 class TestTrainModelTask(TestCase):
@@ -33,7 +33,7 @@ class TestTrainModelTask(TestCase):
         self.context.config.paths_artifact_folder = "./test/unit/trained_models"
         self.context.paths.webroot = "test_webroot"
 
-    @patch("openstef.tasks.train_model.train_model_pipeline")
+    @patch("forecasting_engine.openstef.tasks.train_model.train_model_pipeline")
     def test_create_train_model_task_happy_flow(self, train_model_pipeline_mock):
         # Test happy flow of create forecast task
 
@@ -55,7 +55,7 @@ class TestTrainModelTask(TestCase):
             len(test_data),
         )
 
-    @patch("openstef.tasks.train_model.train_model_pipeline")
+    @patch("forecasting_engine.openstef.tasks.train_model.train_model_pipeline")
     def test_create_train_model_task_data_balancing(self, train_model_pipeline_mock):
         # Test happy flow of create forecast task
 
@@ -92,7 +92,7 @@ class TestTrainModelTask(TestCase):
         self.assertEqual(len(input_data), expected_data_points)
 
     @patch(
-        "openstef.tasks.train_model.train_model_pipeline",
+        "forecasting_engine.openstef.tasks.train_model.train_model_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_train_model_known_zero_flatliner(self):
@@ -113,7 +113,7 @@ class TestTrainModelTask(TestCase):
         )
 
     @patch(
-        "openstef.tasks.train_model.train_model_pipeline",
+        "forecasting_engine.openstef.tasks.train_model.train_model_pipeline",
         MagicMock(side_effect=InputDataOngoingFlatlinerError()),
     )
     def test_train_model_unexpected_zero_flatliner(self):
@@ -131,9 +131,9 @@ class TestTrainModelTask(TestCase):
             'All recent load measurements are constant. Check the load profile of this pid as well as related/neighbouring prediction jobs. Afterwards, consider adding this pid to the "known_zero_flatliners" app_setting and possibly removing other pids from the same app_setting.',
         )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_pipeline_train_model_with_context(
         self, post_teams_mock, serializer_mock, save_mock
     ):
@@ -141,9 +141,9 @@ class TestTrainModelTask(TestCase):
         serializer_mock.return_value.load_model.side_effect = FileNotFoundError
         train_model_task(pj=self.pj, context=self.context)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_pipeline_train_model_with_save_train_forecasts(
         self, post_teams_mock, serializer_mock, save_mock
     ):
@@ -161,7 +161,7 @@ class TestTrainModelTask(TestCase):
             self.assertIsInstance(ds, pd.DataFrame)
             self.assertIn("forecast", ds.columns)
 
-    @patch("openstef.tasks.train_model.train_model_pipeline")
+    @patch("forecasting_engine.openstef.tasks.train_model.train_model_pipeline")
     def test_pipeline_train_model_with_save_train_forecasts_and_errors(
         self, pipeline_mock
     ):
@@ -183,7 +183,7 @@ class TestTrainModelTask(TestCase):
         with self.assertRaises(RuntimeError):
             train_model_task(pj=pj, context=context)
 
-    @patch("openstef.tasks.train_model.PredictionJobLoop")
+    @patch("forecasting_engine.openstef.tasks.train_model.PredictionJobLoop")
     def test_main_task(self, pjloop_mock):
         """Test create forecast task with context."""
 
@@ -197,7 +197,7 @@ class TestTrainModelTask(TestCase):
 
         task_main(None, not_none_object, not_none_object)
 
-    @patch("openstef.tasks.train_model.train_model_pipeline")
+    @patch("forecasting_engine.openstef.tasks.train_model.train_model_pipeline")
     def test_create_train_model_task_train_only(self, train_model_pipeline_mock):
         # Test happy flow of create forecast task for train only pj
         context = MagicMock()
@@ -211,7 +211,7 @@ class TestTrainModelTask(TestCase):
             train_model_pipeline_mock.call_args_list[0][0][0]["id"], pj["id"]
         )
 
-    @patch("openstef.tasks.train_model.train_model_pipeline")
+    @patch("forecasting_engine.openstef.tasks.train_model.train_model_pipeline")
     def test_create_train_model_task_forecast_only(self, train_model_pipeline_mock):
         # Test happy flow of create forecast task for forecast only pj
         context = MagicMock()

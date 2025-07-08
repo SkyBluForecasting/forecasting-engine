@@ -1,0 +1,17 @@
+[run]
+branch = True
+source =
+    forecasting_engine
+    .
+relative_files = True
+
+[report]
+fail_under = 85
+skip_covered = True
+show_missing = True
+
+[paths]
+source =
+    forecasting_engine
+    */forecasting-engine/forecasting_engine
+    .

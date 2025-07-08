@@ -12,9 +12,13 @@ import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 
-from openstef.feature_engineering.apply_features import apply_features
-from openstef.model.model_creator import ModelCreator
-from openstef.model.regressors.linear_quantile import LinearQuantileOpenstfRegressor
+from forecasting_engine.openstef.feature_engineering.apply_features import (
+    apply_features,
+)
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.regressors.linear_quantile import (
+    LinearQuantileOpenstfRegressor,
+)
 
 train_input = TestData.load("reference_sets/307-train-data.csv")
 

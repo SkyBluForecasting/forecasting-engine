@@ -10,8 +10,12 @@ from typing import Union
 
 import pandas as pd
 
-from openstef.data_classes.model_specifications import ModelSpecificationDataClass
-from openstef.data_classes.prediction_job import PredictionJobDataClass
+from forecasting_engine.openstef.data_classes.model_specifications import (
+    ModelSpecificationDataClass,
+)
+from forecasting_engine.openstef.data_classes.prediction_job import (
+    PredictionJobDataClass,
+)
 
 
 class TestData:

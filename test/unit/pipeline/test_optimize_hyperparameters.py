@@ -7,17 +7,21 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from openstef.data_classes.model_specifications import ModelSpecificationDataClass
-from openstef.data_classes.split_function import SplitFuncDataClass
-from openstef.exceptions import (
+from forecasting_engine.openstef.data_classes.model_specifications import (
+    ModelSpecificationDataClass,
+)
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.exceptions import (
     InputDataInsufficientError,
     InputDataWrongColumnOrderError,
 )
-from openstef.metrics.reporter import Report
-from openstef.model.objective_creator import ObjectiveCreator
-from openstef.model.regressors.regressor import OpenstfRegressor
-from openstef.model_selection.model_selection import split_data_train_validation_test
-from openstef.pipeline.optimize_hyperparameters import (
+from forecasting_engine.openstef.metrics.reporter import Report
+from forecasting_engine.openstef.model.objective_creator import ObjectiveCreator
+from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor
+from forecasting_engine.openstef.model_selection.model_selection import (
+    split_data_train_validation_test,
+)
+from forecasting_engine.openstef.pipeline.optimize_hyperparameters import (
     optimize_hyperparameters_pipeline,
     optimize_hyperparameters_pipeline_core,
     optuna_optimization,
@@ -38,7 +42,7 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
             "input_data_multi_horizon_features.csv"
         )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
     def test_optimize_hyperparameters_pipeline(self, save_model_mock):
         """Also check if non-default quantiles are processed correctly"""
         pj = self.pj
@@ -125,7 +129,10 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
         self.assertIsInstance(result[4], int)
         self.assertIsInstance(result[5], dict)
 
-    @patch("openstef.validation.validation.is_data_sufficient", return_value=False)
+    @patch(
+        "forecasting_engine.openstef.validation.validation.is_data_sufficient",
+        return_value=False,
+    )
     def test_optimize_hyperparameters_pipeline_insufficient_data(self, mock):
         # if data is not sufficient a InputDataInsufficientError should be raised
         with self.assertRaises(InputDataInsufficientError):
@@ -156,7 +163,7 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
                 n_trials=2,
             )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
     def test_optimize_hyperparameters_pipeline_quantile_regressor(
         self, save_model_mock
     ):

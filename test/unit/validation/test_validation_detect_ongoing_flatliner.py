@@ -8,7 +8,7 @@ from test.unit.utils.base import BaseTestCase
 import numpy as np
 import pandas as pd
 
-from openstef.validation.validation import detect_ongoing_flatliner
+from forecasting_engine.openstef.validation.validation import detect_ongoing_flatliner
 
 
 class TestDetectOngoingFlatliners(BaseTestCase):

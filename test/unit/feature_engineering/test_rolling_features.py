@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from openstef.enums import AggregateFunction
-from openstef.feature_engineering.rolling_features import (
+from forecasting_engine.openstef.enums import AggregateFunction
+from forecasting_engine.openstef.feature_engineering.rolling_features import (
     add_rolling_aggregate_features,
     convert_timedelta_to_isoformat,
 )

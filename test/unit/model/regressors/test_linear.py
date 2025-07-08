@@ -10,7 +10,7 @@ import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 
-from openstef.model.regressors.linear import LinearOpenstfRegressor
+from forecasting_engine.openstef.model.regressors.linear import LinearOpenstfRegressor
 
 
 class TestLinearOpenstfRegressor(BaseTestCase):

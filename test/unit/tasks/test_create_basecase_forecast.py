@@ -8,8 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from openstef.enums import PipelineType
-from openstef.tasks.create_basecase_forecast import create_basecase_forecast_task
+from forecasting_engine.openstef.enums import PipelineType
+from forecasting_engine.openstef.tasks.create_basecase_forecast import (
+    create_basecase_forecast_task,
+)
 
 # Specify forecast mock.
 # Make sure this has a datetime of at least NOW+48hours,
@@ -29,7 +31,7 @@ class TestCreateBasecaseForecastTask(TestCase):
         self.pj = TestData.get_prediction_job(pid=307)
 
     @patch(
-        "openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline",
         MagicMock(return_value=FORECAST_MOCK),
     )
     def test_create_basecase_forecast_task_happy_flow(self):
@@ -53,7 +55,9 @@ class TestCreateBasecaseForecastTask(TestCase):
             "Skip this PredictionJob because its forecasts are posted by an external process.",
         )
 
-    @patch("openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline")
+    @patch(
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline"
+    )
     def test_create_forecast_task_train_only(
         self, create_basecase_forecast_pipeline_mock
     ):
@@ -64,7 +68,9 @@ class TestCreateBasecaseForecastTask(TestCase):
         create_basecase_forecast_task(pj, context)
         self.assertEqual(create_basecase_forecast_pipeline_mock.call_count, 0)
 
-    @patch("openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline")
+    @patch(
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline"
+    )
     def test_create_forecast_task_forecast_only(
         self, create_basecase_forecast_pipeline_mock
     ):
@@ -83,7 +89,7 @@ class TestCreateBasecaseForecastTask(TestCase):
         pd.testing.assert_frame_equal(context.mock_calls[3].args[0], FORECAST_MOCK)
 
     @patch(
-        "openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline",
+        "forecasting_engine.openstef.tasks.create_basecase_forecast.create_basecase_forecast_pipeline",
         MagicMock(return_value=FORECAST_NEAR_FUTURE_MOCK),
     )
     def test_create_basecase_forecast_no_forecasts_first_48_hours(self):

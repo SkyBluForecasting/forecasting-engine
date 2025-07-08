@@ -6,18 +6,17 @@ from typing import Type
 
 import numpy as np
 
-from openstef.model.model_creator import ModelCreator
-from openstef.model.objective import RegressorObjective
-from openstef.model.objective_creator import ObjectiveCreator
-from openstef.model.regressors.custom_regressor import (
+from forecasting_engine.openstef.model.model_creator import ModelCreator
+from forecasting_engine.openstef.model.objective import RegressorObjective
+from forecasting_engine.openstef.model.objective_creator import ObjectiveCreator
+from forecasting_engine.openstef.model.regressors.custom_regressor import (
     CustomOpenstfRegressor,
     create_custom_objective,
     load_custom_model,
 )
 
 
-class DummyObjective(RegressorObjective):
-    ...
+class DummyObjective(RegressorObjective): ...
 
 
 class DummyRegressor(CustomOpenstfRegressor):

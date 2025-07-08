@@ -7,7 +7,7 @@ from test.unit.utils.data import TestData
 
 import numpy as np
 
-from openstef.feature_engineering.feature_adder import (
+from forecasting_engine.openstef.feature_engineering.feature_adder import (
     FeatureAdder,
     FeatureDispatcher,
     adders_from_modules,

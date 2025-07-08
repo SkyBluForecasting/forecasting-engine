@@ -8,14 +8,17 @@ from test.unit.utils.base import BaseTestCase
 from test.unit.utils.data import TestData
 from unittest.mock import MagicMock, Mock, patch
 
-from openstef.exceptions import NoPredictedLoadError, NoRealisedLoadError
-from openstef.tasks.utils.predictionjobloop import (
+from forecasting_engine.openstef.exceptions import (
+    NoPredictedLoadError,
+    NoRealisedLoadError,
+)
+from forecasting_engine.openstef.tasks.utils.predictionjobloop import (
     PredictionJobException,
     PredictionJobLoop,
 )
 
 # import project modules
-from openstef.tasks.utils.taskcontext import TaskContext
+from forecasting_engine.openstef.tasks.utils.taskcontext import TaskContext
 
 # define constants
 PREDICTION_JOBS = TestData.get_prediction_jobs()
@@ -91,7 +94,7 @@ class TestTaskContext(BaseTestCase):
         ) as context:
             PredictionJobLoop(context, prediction_jobs=PREDICTION_JOBS).map(func_fail)
 
-    @patch("openstef.tasks.utils.taskcontext.post_teams")
+    @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_task_context_teams_message(self, postteamsmock):
         """Test to check that:
         if multiple exceptions are raised,

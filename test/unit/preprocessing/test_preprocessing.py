@@ -6,7 +6,7 @@ from test.unit.utils.base import BaseTestCase
 
 import pandas as pd
 
-from openstef.preprocessing import preprocessing
+from forecasting_engine.openstef.preprocessing import preprocessing
 
 
 class TestPreprocessing(BaseTestCase):

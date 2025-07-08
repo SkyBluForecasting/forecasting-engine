@@ -13,30 +13,36 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import sklearn
 
-from openstef.data_classes.data_prep import DataPrepDataClass
-from openstef.data_classes.split_function import SplitFuncDataClass
-from openstef.enums import ModelType
-from openstef.exceptions import (
+from forecasting_engine.openstef.data_classes.data_prep import DataPrepDataClass
+from forecasting_engine.openstef.data_classes.split_function import SplitFuncDataClass
+from forecasting_engine.openstef.enums import ModelType
+from forecasting_engine.openstef.exceptions import (
     InputDataInsufficientError,
     InputDataWrongColumnOrderError,
     SkipSaveTrainingForecasts,
 )
-from openstef.feature_engineering.data_preparation import (
+from forecasting_engine.openstef.feature_engineering.data_preparation import (
     ARDataPreparation,
     LegacyDataPreparation,
 )
-from openstef.feature_engineering.feature_applicator import TrainFeatureApplicator
-from openstef.metrics.reporter import Report
-from openstef.model.objective import RegressorObjective
-from openstef.model.regressors.custom_regressor import CustomOpenstfRegressor
-from openstef.model_selection.model_selection import split_data_train_validation_test
-from openstef.pipeline.train_model import (
+from forecasting_engine.openstef.feature_engineering.feature_applicator import (
+    TrainFeatureApplicator,
+)
+from forecasting_engine.openstef.metrics.reporter import Report
+from forecasting_engine.openstef.model.objective import RegressorObjective
+from forecasting_engine.openstef.model.regressors.custom_regressor import (
+    CustomOpenstfRegressor,
+)
+from forecasting_engine.openstef.model_selection.model_selection import (
+    split_data_train_validation_test,
+)
+from forecasting_engine.openstef.pipeline.train_model import (
     DEFAULT_TRAIN_HORIZONS_HOURS,
     train_model_pipeline,
     train_model_pipeline_core,
     train_pipeline_common,
 )
-from openstef.validation import validation
+from forecasting_engine.openstef.validation import validation
 
 
 class DummyObjective(RegressorObjective): ...
@@ -236,7 +242,7 @@ class TestTrainModelPipeline(BaseTestCase):
         # check if report is a Report
         self.assertIsInstance(report, Report)
 
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_pipeline_with_default_modelspecs(self, mock_serializer):
         """We check that the modelspecs object given as default in the prediction job
         is the one given to save_model when there is no previous model saved for the
@@ -288,9 +294,9 @@ class TestTrainModelPipeline(BaseTestCase):
         ]
         self.assertEqual(saved_model_specs, model_specs)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.train_model_pipeline_core")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.train_model_pipeline_core")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_pipeline_happy_flow(
         self, serializer_mock, pipeline_mock, save_model_mock
     ):
@@ -340,9 +346,9 @@ class TestTrainModelPipeline(BaseTestCase):
         ]
         assert set(found_files) == set(excepted_fnames)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.train_model_pipeline_core")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.train_model_pipeline_core")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_pipeline_young_model(
         self, serializer_mock, pipeline_mock, save_model_mock
     ):
@@ -370,9 +376,9 @@ class TestTrainModelPipeline(BaseTestCase):
         self.assertIsNone(result)
         self.assertFalse(pipeline_mock.called)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.train_model_pipeline_core")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.train_model_pipeline_core")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_pipeline_young_model_save_forecasts(
         self, serializer_mock, pipeline_mock, save_model_mock
     ):
@@ -403,8 +409,11 @@ class TestTrainModelPipeline(BaseTestCase):
             )
         self.assertFalse(pipeline_mock.called)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.validation.validation.is_data_sufficient", return_value=False)
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch(
+        "forecasting_engine.openstef.validation.validation.is_data_sufficient",
+        return_value=False,
+    )
     def test_train_model_InputDataInsufficientError(
         self, validation_is_data_sufficient_mock, save_model_mock
     ):
@@ -419,7 +428,7 @@ class TestTrainModelPipeline(BaseTestCase):
                 artifact_folder="./test/unit/trained_models",
             )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
     def test_train_model_InputDataWrongColumnOrderError(self, save_model_mock):
         # change the column order
         input_data = self.train_input.iloc[:, ::-1]
@@ -433,8 +442,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 artifact_folder="./test/unit/trained_models",
             )
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_OldModelHigherScoreError(
         self, serializer_mock, save_model_mock
     ):
@@ -460,8 +469,8 @@ class TestTrainModelPipeline(BaseTestCase):
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 1)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_OldModelHigherScoreError_save_forecast(
         self, serializer_mock, save_model_mock
     ):
@@ -490,8 +499,8 @@ class TestTrainModelPipeline(BaseTestCase):
             )
         self.assertEqual(len(serializer_mock_instance.method_calls), 1)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_log_new_model_better(self, serializer_mock, save_model_mock):
         # Mock an old model which is better than the new one.
         old_model_mock = MagicMock()
@@ -515,8 +524,8 @@ class TestTrainModelPipeline(BaseTestCase):
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_log_couldnt_compare(self, serializer_mock, save_model_mock):
         # Mock an old model which is better than the new one.
         old_model_mock = MagicMock()
@@ -540,8 +549,8 @@ class TestTrainModelPipeline(BaseTestCase):
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
 
-    @patch("openstef.model.serializer.MLflowSerializer.save_model")
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_No_old_model(self, serializer_mock, save_model_mock):
         # Mock an old model which is better than the new one.
         old_model_mock = MagicMock()
@@ -564,7 +573,7 @@ class TestTrainModelPipeline(BaseTestCase):
         )
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
 
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_ignore_existing_models(self, serializer_mock):
         # Mock an old model
         old_model_mock = MagicMock()
@@ -666,8 +675,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 self.pj, self.model_specs, self.train_input, horizons="custom_horizon"
             )
 
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
-    @patch("openstef.pipeline.train_model.train_model_pipeline_core")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.pipeline.train_model.train_model_pipeline_core")
     def test_train_model_pipeline_with_default_train_horizons(
         self, mock_train_model_pipeline_core, mock_serializer
     ):
@@ -690,8 +699,8 @@ class TestTrainModelPipeline(BaseTestCase):
             == DEFAULT_TRAIN_HORIZONS_HOURS
         )
 
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
-    @patch("openstef.pipeline.train_model.train_model_pipeline_core")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.pipeline.train_model.train_model_pipeline_core")
     def test_train_model_pipeline_with_custom_train_horizons(
         self, mock_train_model_pipeline_core, mock_serializer
     ):
@@ -715,7 +724,7 @@ class TestTrainModelPipeline(BaseTestCase):
             == train_horizons_hours
         )
 
-    @patch("openstef.pipeline.train_model.MLflowSerializer")
+    @patch("forecasting_engine.openstef.pipeline.train_model.MLflowSerializer")
     def test_train_model_pipeline_with_save_train_forecasts(self, mock_serializer):
         """We check that the modelspecs object given as default in the prediction job
         is the one given to save_model when there is no previous model saved for the

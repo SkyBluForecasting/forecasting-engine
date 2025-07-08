@@ -1,0 +1,70 @@
+name: Test and Coverage
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test and Coverage
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT }}
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.txt
+        pip install -r test-requirements.txt
+        pip install flake8 coverage
+
+    - name: Check formatting using black
+      uses: rickstaa/action-black@v1
+      id: action_black
+      with:
+        black_args: "."
+
+    - name: Lint
+      run: |
+        flake8 . --count --select=E9,F63,F7,F8 --show-source --statistics
+        flake8 . --count --exit-zero --show-source --statistics
+
+    - name: Run tests with coverage
+      run: |
+        pip install coverage pytest
+        PYTHONPATH=${{ github.workspace }} coverage run --source=forecasting_engine -m pytest test/
+        coverage report -m
+        coverage xml
+      
+    - name: Fix coverage paths for CI
+      run: |
+        sed -i 's|/home/runner/work/forecasting-engine/forecasting-engine/|/github/workspace/|g' coverage.xml
+
+    - name: Check final coverage summary
+      run: |
+        coverage report --show-missing
+
+    - name: Display coverage summary
+      run: coverage report --fail-under=85 --ignore-errors
+
+    - name: Upload coverage.xml
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.xml
+        retention-days: 14

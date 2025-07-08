@@ -8,7 +8,7 @@ from test.unit.utils.data import TestData
 
 import pandas as pd
 
-from openstef.model.basecase import BaseCaseModel
+from forecasting_engine.openstef.model.basecase import BaseCaseModel
 
 NOW = datetime.now(timezone.utc)
 

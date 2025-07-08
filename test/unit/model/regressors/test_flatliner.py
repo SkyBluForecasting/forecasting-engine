@@ -11,8 +11,10 @@ import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 
-from openstef.feature_engineering.apply_features import apply_features
-from openstef.model.regressors.flatliner import FlatlinerRegressor
+from forecasting_engine.openstef.feature_engineering.apply_features import (
+    apply_features,
+)
+from forecasting_engine.openstef.model.regressors.flatliner import FlatlinerRegressor
 
 train_input = TestData.load("reference_sets/307-train-data.csv")
 
