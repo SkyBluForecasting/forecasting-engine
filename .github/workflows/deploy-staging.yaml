@@ -55,4 +55,21 @@ jobs:
         run: |
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
                 'ls -l ~/forecasting-engine && head -n 5 ~/forecasting-engine/.env'
+
+
+      - name: Set up Python 3.11 virtualenv and install dependencies
+        run: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            set -ex
+            cd ~/forecasting-engine
         
+            # Create venv with Python 3.11 if it doesn't exist
+            if [ ! -d "venv" ]; then
+                python3.11 -m venv venv
+            fi
+        
+            # Activate venv and install requirements
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            EOF
