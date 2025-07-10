@@ -65,7 +65,7 @@ jobs:
             
                 # Install Python 3.11 if not present
                 if ! command -v python3.11 &> /dev/null; then
-                    sudo dnf install -y python3.11 python3.11-virtualenv
+                    sudo dnf install -y python3.11
                 fi
             
                 # Create venv if not exists
