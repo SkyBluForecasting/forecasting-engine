@@ -83,6 +83,11 @@ jobs:
                 fi
             
                 source venv/bin/activate
+
+                # Use temp dir on root disk to avoid small /tmp space issue
+                mkdir -p ~/tmp
+                export TMPDIR=~/tmp
+
                 pip install --upgrade pip
                 pip install --no-cache-dir -r requirements.txt
             EOF
