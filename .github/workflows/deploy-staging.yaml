@@ -18,52 +18,76 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Log checkout success
+        run: |
+            echo "✅ Checkout step completed."
+            echo "Current directory content:"
+            ls -la
+
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
+
+      - name: Log SSH key setup
+        run: |
+            echo "✅ SSH key has been added to ssh-agent."
+            ssh-add -l || echo "⚠️ No SSH keys loaded."
+
       - name: Copy only needed files to EC2
         run: |
+            set -x
             rsync -avz --delete \
                 --exclude='.git' \
                 --exclude='scripts' \
                 -e "ssh -o StrictHostKeyChecking=no" \
-                forecasting_engine/ requirements.txt Dockerfile \
+                forecasting_engine/ requirements.txt \
                 ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
         
       - name: Upload .env file to EC2 root folder (~/forecasting-engine)
         run: |
-          echo "${{ secrets.ENV_FILE_STAGING }}" > temp.env
-          scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
-          rm temp.env
-
-      - name: Confirm .env exists on EC2 root folder
+            echo "${{ secrets.ENV_FILE_STAGING }}" > temp.env
+            scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
+            rm temp.env
+        
+      - name: Confirm files on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
-            'ls -l ~/forecasting-engine/.env && head -n 5 ~/forecasting-engine/.env'
+            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
+                'ls -l ~/forecasting-engine && head -n 5 ~/forecasting-engine/.env'
 
-      - name: SSH into EC2 and restart Docker container
+
+      - name: Set up Python 3.11 virtualenv and install dependencies
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-            set -e
-            cd ~/forecasting-engine
+            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+                set -ex
+                cd ~/forecasting-engine
+            
+                # Install Python 3.11 if not present
+                if ! command -v python3.11 &> /dev/null; then
+                    sudo dnf install -y python3.11
+                    sudo dnf clean all
+                fi
+            
+                # Clean up package manager caches to free disk space
+                sudo rm -rf /var/cache/dnf
+                sudo rm -rf /var/lib/dnf/history.*
+                sudo dnf clean all
+            
+                # Clean up pip cache to reduce space usage
+                rm -rf ~/.cache/pip
+            
+                # Create venv if not exists
+                if [ ! -d "venv" ]; then
+                    python3.11 -m venv venv
+                fi
+            
+                source venv/bin/activate
 
-            echo "--- CONTENTS OF ~/forecasting-engine ---"
-            ls -la
+                # Use temp dir on root disk to avoid small /tmp space issue
+                mkdir -p ~/tmp
+                export TMPDIR=~/tmp
 
-            echo "--- STOPPING old Docker container if it exists ---"
-            docker stop forecasting-engine || true
-            docker rm forecasting-engine || true
-            docker rmi forecasting-engine || true
-
-            echo "--- BUILDING Docker image ---"
-            docker build -t forecasting-engine .
-
-            echo "--- RUNNING container ---"
-            docker run -d \
-              --name forecasting-engine \
-              --env-file .env \
-              -p 80:8000 \
-              forecasting-engine
-          EOF
+                pip install --upgrade pip
+                pip install --no-cache-dir -r requirements.txt
+            EOF
