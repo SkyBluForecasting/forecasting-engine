@@ -28,7 +28,7 @@ class TestCreateForecastPipeline(BaseTestCase):
 
         self.pj = TestData.get_prediction_job(pid=307)
         self.serializer = MLflowSerializer(
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns"
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns"
         )
         self.data = TestData.load("reference_sets/307-test-data.csv")
         self.train_input = TestData.load("reference_sets/307-train-data.csv")
@@ -36,7 +36,7 @@ class TestCreateForecastPipeline(BaseTestCase):
         # mock model location
         # Determine absolute location where already stored model is, based on relative path.
         # This is needed so the model stored in the repo can be found when running remote
-        rel_path = "test/unit/trained_models/mlruns/893156335105023143/2ca1d126e8724852b303b256e64a6c4f/artifacts/model"
+        rel_path = "test/openstef/trained_models/mlruns/893156335105023143/2ca1d126e8724852b303b256e64a6c4f/artifacts/model"
         _get_model_uri_mock.return_value = Path(rel_path).absolute().as_uri()
 
         # Use MLflowSerializer to load a model
@@ -231,7 +231,7 @@ class TestCreateForecastPipeline(BaseTestCase):
         forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
         with self.assertRaises(MlflowException):
             create_forecast.create_forecast_pipeline(
-                self.pj, forecast_data, "./test/unit/trained_models/mlruns"
+                self.pj, forecast_data, "./test/openstef/trained_models/mlruns"
             )
 
     @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
@@ -257,6 +257,6 @@ class TestCreateForecastPipeline(BaseTestCase):
         col_name = forecast_data.columns[0]
         forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
         create_forecast.create_forecast_pipeline(
-            self.pj, forecast_data, "./test/unit/trained_models/mlruns"
+            self.pj, forecast_data, "./test/openstef/trained_models/mlruns"
         )
         self.assertTrue(create_forecast_pipeline_core_mock.called)

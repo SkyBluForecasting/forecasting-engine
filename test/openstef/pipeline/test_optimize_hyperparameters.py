@@ -52,8 +52,8 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
         parameters = optimize_hyperparameters_pipeline(
             pj,
             self.input_data,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
             n_trials=2,
         )
         self.assertIsInstance(parameters, dict)
@@ -177,8 +177,8 @@ class TestOptimizeHyperParametersPipeline(BaseTestCase):
         parameters = optimize_hyperparameters_pipeline(
             pj,
             self.input_data,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
             n_trials=1,
         )
         self.assertIsInstance(parameters, dict)

@@ -108,7 +108,7 @@ class TestTrainModelPipeline(BaseTestCase):
         """Test happy flow of the train model pipeline
 
         Other manual steps;
-        - Identify the artifact forlder of the old model test/unit/trained_models/mlruns/0/d7719d5d316d4416a947e4f7ea7e73a8/artifacts/model
+        - Identify the artifact forlder of the old model test/openstef/trained_models/mlruns/0/d7719d5d316d4416a947e4f7ea7e73a8/artifacts/model
         - Rename the new artifact folder to that name
         - Update references to the artifact location in the new ../d7.../meta.yaml
         - Remove the old folder
@@ -118,8 +118,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
 
     def _train_model_pipeline_core_happy_flow(self, data_prep_class):
@@ -218,7 +218,7 @@ class TestTrainModelPipeline(BaseTestCase):
         model_specs = self.model_specs
         model_specs.hyper_params = {}
         model_specs.feature_modules = [
-            "test.unit.feature_engineering.test_feature_adder"
+            "test.openstef.feature_engineering.test_feature_adder"
         ]
         dummy_feature = "dummy_0.5"
         model_specs.feature_names.append(dummy_feature)
@@ -275,7 +275,7 @@ class TestTrainModelPipeline(BaseTestCase):
 
         # Custom features
         model_specs.feature_modules = [
-            "test.unit.feature_engineering.test_feature_adder"
+            "test.openstef.feature_engineering.test_feature_adder"
         ]
         model_specs.feature_names.append("dummy_0.5")
 
@@ -285,8 +285,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
 
         saved_model_specs = mock_serializer_instance.save_model.call_args.kwargs[
@@ -324,19 +324,19 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
 
         # Assert the report was attempted to be written to the correct location
         assert report_mock.method_calls[0].args[0] == os.path.join(
-            "./test/unit/trained_models", "307", "weight_plot.html"
+            "./test/openstef/trained_models", "307", "weight_plot.html"
         )
         # Assert the figure is in the correct location
         found_files = [
             os.path.basename(file_with_path)
             for file_with_path in glob.glob(
-                os.path.join("./test/unit/trained_models/307/*.html")
+                os.path.join("./test/openstef/trained_models/307/*.html")
             )
         ]
         excepted_fnames = [
@@ -370,8 +370,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertIsNone(result)
         self.assertFalse(pipeline_mock.called)
@@ -404,8 +404,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 pj=pj,
                 input_data=self.train_input,
                 check_old_model_age=True,
-                mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-                artifact_folder="./test/unit/trained_models",
+                mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+                artifact_folder="./test/openstef/trained_models",
             )
         self.assertFalse(pipeline_mock.called)
 
@@ -424,8 +424,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 pj=self.pj,
                 input_data=self.train_input,
                 check_old_model_age=False,
-                mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-                artifact_folder="./test/unit/trained_models",
+                mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+                artifact_folder="./test/openstef/trained_models",
             )
 
     @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
@@ -438,8 +438,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 pj=self.pj,
                 input_data=input_data,
                 check_old_model_age=False,
-                mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-                artifact_folder="./test/unit/trained_models",
+                mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+                artifact_folder="./test/openstef/trained_models",
             )
 
     @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.save_model")
@@ -463,8 +463,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 1)
@@ -494,8 +494,8 @@ class TestTrainModelPipeline(BaseTestCase):
                 pj=pj,
                 input_data=self.train_input,
                 check_old_model_age=True,
-                mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-                artifact_folder="./test/unit/trained_models",
+                mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+                artifact_folder="./test/openstef/trained_models",
             )
         self.assertEqual(len(serializer_mock_instance.method_calls), 1)
 
@@ -518,8 +518,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
@@ -543,8 +543,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertIsNone(result)
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
@@ -568,8 +568,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertEqual(len(serializer_mock_instance.method_calls), 3)
 
@@ -601,8 +601,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
             ignore_existing_models=False,
         )
 
@@ -614,8 +614,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
             ignore_existing_models=True,
         )
         self.assertEqual(len(df1_new_model.columns), 6)
@@ -688,7 +688,7 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
             artifact_folder=None,
         )
 
@@ -714,7 +714,7 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=self.pj,
             input_data=self.train_input,
             check_old_model_age=False,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
             artifact_folder=None,
         )
 
@@ -743,8 +743,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
 
         self.assertIsNone(datasets)
@@ -755,8 +755,8 @@ class TestTrainModelPipeline(BaseTestCase):
             pj=pj,
             input_data=self.train_input,
             check_old_model_age=True,
-            mlflow_tracking_uri="./test/unit/trained_models/mlruns",
-            artifact_folder="./test/unit/trained_models",
+            mlflow_tracking_uri="./test/openstef/trained_models/mlruns",
+            artifact_folder="./test/openstef/trained_models",
         )
         self.assertIsNotNone(datasets)
 

@@ -305,7 +305,7 @@ class TestTrain(BaseTestCase):
 
         # Test dummy custom split as json
         pj.train_split_func = SplitFuncDataClass(
-            function="test.unit.pipeline.test_train.dummy_split", arguments="{}"
+            function="test.openstef.pipeline.test_train.dummy_split", arguments="{}"
         )
         (
             train_data,

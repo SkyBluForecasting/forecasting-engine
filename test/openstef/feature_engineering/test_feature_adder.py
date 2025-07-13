@@ -85,7 +85,7 @@ class TestFeatureAdder(BaseTestCase):
 
     def test_load_modules(self):
         adders = adders_from_modules(
-            ["test.unit.feature_engineering.test_feature_adder"]
+            ["test.openstef.feature_engineering.test_feature_adder"]
         )
         adders_type = [type(adder) for adder in adders]
         self.assertEqual(len(adders), 2)

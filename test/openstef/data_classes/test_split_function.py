@@ -24,7 +24,7 @@ class TestSplitFuncDataClass(unittest.TestCase):
     def setUp(self) -> None:
         self.arguments = dict(arg1=1, arg2=2, arg3=3)
         self.split_func_with_strings = SplitFuncDataClass(
-            function="test.unit.data_classes.test_split_function.dummy_split_func",
+            function="test.openstef.data_classes.test_split_function.dummy_split_func",
             arguments=json.dumps(self.arguments),
         )
         self.split_func_with_objects = SplitFuncDataClass(
@@ -63,7 +63,7 @@ class TestSplitFuncDataClass(unittest.TestCase):
         # Non Callable object
         split_func_dc = copy.deepcopy(self.split_func_with_strings)
         split_func_dc["function"] = (
-            "test.unit.data_classes.test_split_function.dummy_not_func"
+            "test.openstef.data_classes.test_split_function.dummy_not_func"
         )
         with self.assertRaises(ValueError):
             _ = split_func_dc.load()

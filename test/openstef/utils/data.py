@@ -72,7 +72,7 @@ class TestData:
                 return reader(fp)
 
         if ".py" in filename:
-            module_name = f"test.unit.data.{filename.split('.py')[0]}"
+            module_name = f"test.openstef.data.{filename.split('.py')[0]}"
             reader = importlib.import_module
             module = reader(module_name)
             return getattr(
