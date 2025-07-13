@@ -19,3 +19,14 @@ repos:
     - id: black
       language_version: python3.11
       additional_dependencies: ['click==8.0.4']
+
+- repo: https://github.com/pycqa/flake8
+  rev: 7.0.0  # Make sure this is a stable, current version
+  hooks:
+    - id: flake8
+      additional_dependencies: []
+      # Optionally configure flake8 behavior
+      args: [
+        "--select=E9,F63,F7,F8",  # strict errors
+      ]
+      language_version: python3.11

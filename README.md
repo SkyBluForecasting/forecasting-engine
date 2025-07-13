@@ -87,9 +87,14 @@ To run tests and also check coverage:
 coverage run --source=forecasting_engine -m pytest test/orchestration/ && coverage report -m
 ```
 
-## Running pre-commit
+## Setting up pre-commit
 
+It is recommended to enable your IDE to run the pre-commit checks before submitting a commit.
 
+```bash
+# pip install pre-commit
+# pre-commit install
+```
 
 # About OpenSTEF
 
