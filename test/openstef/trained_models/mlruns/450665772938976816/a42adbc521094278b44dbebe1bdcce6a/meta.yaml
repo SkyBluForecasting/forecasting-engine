@@ -1,0 +1,15 @@
+artifact_uri: /Users/mfavit/forecasting-engine/test/unit/trained_models/mlruns/450665772938976816/a42adbc521094278b44dbebe1bdcce6a/artifacts
+end_time: 1751913265246
+entry_point_name: ''
+experiment_id: '450665772938976816'
+lifecycle_stage: active
+run_id: a42adbc521094278b44dbebe1bdcce6a
+run_name: Default
+run_uuid: a42adbc521094278b44dbebe1bdcce6a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751913265219
+status: 3
+tags: []
+user_id: mfavit
