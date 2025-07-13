@@ -54,7 +54,9 @@ def generate_forecast_for_asset(asset_id: str):
         logger.error(f"Training data for asset {asset_id} is invalid: {e}")
         raise
     except Exception as e:
-        logger.exception(f"Unexpected error loading training data for asset {asset_id}")
+        logger.exception(
+            f"Unexpected error loading training data for asset {asset_id}: {e}"
+        )
         raise
 
     try:
@@ -92,7 +94,7 @@ def generate_forecast_for_asset(asset_id: str):
         logger.error(f"No model found in MLflow for asset {asset_id}: {e}")
         raise
     except Exception as e:
-        logger.exception(f"Forecast pipeline failed for asset {asset_id}")
+        logger.exception(f"Forecast pipeline failed for asset {asset_id}: {e}")
         raise
 
     logger.info(f"Forecast generation successful for asset: {asset_id}")

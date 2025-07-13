@@ -17,7 +17,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        forecast_df = generate_forecast_for_asset(args.asset_id)
+        generate_forecast_for_asset(args.asset_id)
     except FileNotFoundError as e:
         logger.error(f"[NOT FOUND] {e}")
         sys.exit(1)
@@ -25,7 +25,7 @@ def main():
         logger.error(f"[BAD INPUT] {e}")
         sys.exit(2)
     except Exception as e:
-        logger.exception(f"[FATAL] Unexpected error for asset {args.asset_id}")
+        logger.exception(f"[FATAL] Unexpected error for asset {args.asset_id}: {e}")
         sys.exit(99)
 
 
