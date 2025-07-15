@@ -21,6 +21,15 @@ def mock_bucket(monkeypatch):
     monkeypatch.setenv("S3_BUCKET", "dummy-bucket")
 
 
+@pytest.fixture(autouse=True)
+def patch_get_s3_bucket():
+    with patch(
+        "forecasting_engine.orchestration.s3_utils.get_s3_bucket",
+        return_value="dummy-bucket",
+    ):
+        yield
+
+
 @pytest.fixture
 def mock_s3_client():
     client = MagicMock()

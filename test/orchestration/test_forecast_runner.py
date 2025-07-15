@@ -13,6 +13,15 @@ def mock_training_data():
     return pd.DataFrame({"load": [1, 2, 3]}, index=idx)
 
 
+@pytest.fixture(autouse=True)
+def patch_get_s3_bucket():
+    with patch(
+        "forecasting_engine.orchestration.s3_utils.get_s3_bucket",
+        return_value="dummy-bucket",
+    ):
+        yield
+
+
 @pytest.fixture
 def patch_load_training_pd_from_s3(mock_training_data):
     with patch(
