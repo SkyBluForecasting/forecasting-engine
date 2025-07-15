@@ -22,6 +22,16 @@ def patch_get_s3_bucket():
         yield
 
 
+@pytest.fixture(autouse=True)
+def patch_s3_client():
+    with patch(
+        "forecasting_engine.orchestration.s3_utils.get_s3_client"
+    ) as mock_client:
+        mock = MagicMock()
+        mock_client.return_value = mock
+        yield mock
+
+
 @pytest.fixture
 def patch_load_training_pd_from_s3(mock_training_data):
     with patch(

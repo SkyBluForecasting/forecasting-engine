@@ -193,7 +193,7 @@ class TestLoadCsvFromS3:
         mock_s3_client.get_object.return_value = {"Body": BytesIO("".encode("utf-8"))}
 
         with pytest.raises(
-            ValueError, match="CSV at forecasting-forecasts/training/empty.csv is empty"
+            ValueError, match="CSV at dummy-bucket/training/empty.csv is empty"
         ):
             load_training_csv_from_s3("training/empty.csv")
 
