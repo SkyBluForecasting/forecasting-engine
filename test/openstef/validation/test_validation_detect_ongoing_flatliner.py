@@ -52,7 +52,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is False
+        assert not bool(flatliner_ongoing)
 
     def test_only_last_different(self):
         # Scenario: A flatliner pattern has been going on for a long time. However,
@@ -71,7 +71,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is False
+        assert not bool(flatliner_ongoing)
 
     def test_flatliner_pattern_below_threshold(self):
         # Scenario: A flatliner pattern has just begun, however it has not lasted
@@ -90,7 +90,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is False
+        assert not bool(flatliner_ongoing)
 
     def test_flatliner_pattern_just_above_threshold(self):
         # Arrange
@@ -106,7 +106,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is True
+        assert bool(flatliner_ongoing)
 
     def test_flatliner_and_missing_values(self):
         # Arrange
@@ -125,7 +125,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is True
+        assert bool(flatliner_ongoing)
 
     def test_all_missing_values(self):
         # Arrange
@@ -138,7 +138,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is False
+        assert not bool(flatliner_ongoing)
 
     def test_flatliner_predict_future(self):
         # Scenario: A forecast is made on a flatliner, which contains timestamps in the
@@ -158,7 +158,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is True
+        assert bool(flatliner_ongoing)
 
     def test_flatliner_hovering_around_median_within_rtol(self):
         # Scenario: A flatliner pattern of hovering around a value
@@ -181,7 +181,7 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is True
+        assert bool(flatliner_ongoing)
 
     def test_flatliner_hovering_around_median_outside_rtol(self):
         # Scenario: A flatliner pattern of hovering around a value
@@ -204,4 +204,4 @@ class TestDetectOngoingFlatliners(BaseTestCase):
         )
 
         # Assert
-        assert flatliner_ongoing is False
+        assert not bool(flatliner_ongoing)
