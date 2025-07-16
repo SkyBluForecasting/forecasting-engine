@@ -94,9 +94,9 @@ def test_add_rolling_aggregate_features_flatline():
     assert "rolling_min_load_P1D" in output_data.columns
 
     # Validate the rolling features
-    assert np.all(output_data[f"rolling_median_load_P1D"] == all_ones)
-    assert np.all(output_data[f"rolling_max_load_P1D"] == all_ones)
-    assert np.all(output_data[f"rolling_min_load_P1D"] == all_ones)
+    assert np.all(output_data["rolling_median_load_P1D"] == all_ones)
+    assert np.all(output_data["rolling_max_load_P1D"] == all_ones)
+    assert np.all(output_data["rolling_min_load_P1D"] == all_ones)
 
 
 def test_add_rolling_aggregate_features_nans():

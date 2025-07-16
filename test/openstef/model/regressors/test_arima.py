@@ -7,7 +7,6 @@ from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
 
 import numpy as np
-import pandas as pd
 import sklearn
 
 from forecasting_engine.openstef.model.regressors.arima import ARIMAOpenstfRegressor

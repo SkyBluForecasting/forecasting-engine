@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501>
 #
 # SPDX-License-Identifier: MPL-2.0
-from pathlib import Path
 from test.openstef.utils.data import TestData
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
@@ -11,7 +10,6 @@ import numpy as np
 from forecasting_engine.openstef.feature_engineering.data_preparation import (
     LegacyDataPreparation,
 )
-from forecasting_engine.openstef.model.serializer import MLflowSerializer
 
 
 class TestDataPreparation(TestCase):

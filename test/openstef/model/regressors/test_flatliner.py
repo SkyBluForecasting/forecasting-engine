@@ -4,16 +4,11 @@
 import unittest
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
-from unittest.mock import MagicMock
 
 import numpy as np
-import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 
-from forecasting_engine.openstef.feature_engineering.apply_features import (
-    apply_features,
-)
 from forecasting_engine.openstef.model.regressors.flatliner import FlatlinerRegressor
 
 train_input = TestData.load("reference_sets/307-train-data.csv")

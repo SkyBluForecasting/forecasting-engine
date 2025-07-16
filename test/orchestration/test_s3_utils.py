@@ -2,7 +2,6 @@ import pytest
 import pandas as pd
 from io import BytesIO
 from unittest.mock import patch, MagicMock
-from botocore.exceptions import ClientError
 from forecasting_engine.orchestration.s3_utils import (
     find_matching_key,
     load_training_csv_from_s3,

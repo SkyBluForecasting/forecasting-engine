@@ -1,6 +1,12 @@
 # SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501>
 #
 # SPDX-License-Identifier: MPL-2.0
+
+from forecasting_engine.openstef.model.regressors.dazls import Dazls
+from forecasting_engine.openstef.pipeline.create_component_forecast import (
+    create_components_forecast_pipeline,
+)
+
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from test.openstef.utils.base import BaseTestCase
@@ -10,11 +16,6 @@ import joblib
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
-
-from forecasting_engine.openstef.model.regressors.dazls import Dazls
-from forecasting_engine.openstef.pipeline.create_component_forecast import (
-    create_components_forecast_pipeline,
-)
 
 
 class TestComponentForecast(BaseTestCase):

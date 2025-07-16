@@ -15,7 +15,6 @@ from forecasting_engine.orchestration.logger_factory import get_logger
 
 from dotenv import load_dotenv
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import os
 

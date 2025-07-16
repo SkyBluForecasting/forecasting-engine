@@ -4,7 +4,6 @@
 
 import importlib
 import json
-import pickle
 from pathlib import Path
 from typing import Union
 

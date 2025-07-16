@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-import sys
 from unittest import TestCase
 
 from forecasting_engine.openstef.enums import ModelType

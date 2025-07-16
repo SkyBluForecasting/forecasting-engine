@@ -2,12 +2,9 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import unittest
-from test.openstef.model.regressors.test_xgb_quantile import MockBooster
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
 
-import numpy as np
-import pandas as pd
 import sklearn
 from sklearn.utils.estimator_checks import check_estimator
 

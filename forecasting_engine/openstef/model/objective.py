@@ -296,7 +296,7 @@ class XGBRegressorObjective(RegressorObjective):
         return EarlyStopping(
             rounds=EARLY_STOPPING_ROUNDS,
             metric_name=self.eval_metric,
-            data_name=f"validation_1",
+            data_name="validation_1",
             maximize=False,
             save_best=True,
         )

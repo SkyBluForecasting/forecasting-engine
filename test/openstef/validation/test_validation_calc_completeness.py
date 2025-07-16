@@ -2,16 +2,12 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-from pathlib import Path
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
-from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
-from mlflow.exceptions import MlflowException
 
-from forecasting_engine.openstef.model.serializer import MLflowSerializer
 from forecasting_engine.openstef.validation.validation import calc_completeness_features
 
 

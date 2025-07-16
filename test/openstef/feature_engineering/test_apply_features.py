@@ -5,7 +5,6 @@
 import unittest
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
-from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd

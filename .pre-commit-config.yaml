@@ -27,6 +27,6 @@ repos:
       additional_dependencies: []
       # Optionally configure flake8 behavior
       args: [
-        "--select=E9,F63,F7,F8",  # strict errors
+        "--ignore=E203,W503,E501,E701,C901,W504,E704",  # ignore conflicts with black
       ]
       language_version: python3.11

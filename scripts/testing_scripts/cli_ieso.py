@@ -1,6 +1,5 @@
 import sys
 
-sys.path.append("/Users/mfavit/forecasting-engine/")
 
 from forecasting_engine.openstef.pipeline.train_model import train_model_pipeline
 from forecasting_engine.openstef.pipeline.create_forecast import (
@@ -16,6 +15,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta
+
+sys.path.append("/Users/mfavit/forecasting-engine/")
 
 
 def generate_three_day_hourly_index(start_datetime: datetime) -> pd.DatetimeIndex:
@@ -139,27 +140,27 @@ train, val, test = train_model_pipeline(
 # Basically, it's plotting the two extreme forecasts (15min ahead and 47h ahead).
 # The weight plot shows the importance and weight of every feature.
 
-# html_path = os.path.abspath(f"./mlflow_artifacts/{fsa_id}/Predictor0.25.html")
-# webbrowser.open(f"file://{html_path}")
-# html_path = os.path.abspath(f"./mlflow_artifacts/{fsa_id}/weight_plot.html")
-# webbrowser.open(f"file://{html_path}")
+html_path = os.path.abspath(f"./mlflow_artifacts/{fsa_id}/Predictor0.25.html")
+webbrowser.open(f"file://{html_path}")
+html_path = os.path.abspath(f"./mlflow_artifacts/{fsa_id}/weight_plot.html")
+webbrowser.open(f"file://{html_path}")
 
-# # # Prepare data such that a forecast can be made using the trained model.
-# input_dataset = create_fsa_data(forecasting_filename, fsa_id)
+# # Prepare data such that a forecast can be made using the trained model.
+input_dataset = create_fsa_data(forecasting_filename, fsa_id)
 
-# # Split in training and forecasting data
-# train_data = input_dataset.iloc[:-48, :]  # everything except last 48 rows (~ 48 hours)
-# test_indices = input_dataset.iloc[-48:, :].index  # last 48 rows
+# Split in training and forecasting data
+train_data = input_dataset.iloc[:-48, :]  # everything except last 48 rows (~ 48 hours)
+test_indices = input_dataset.iloc[-48:, :].index  # last 48 rows
 
-# actual_load = input_dataset.loc[test_indices, "load"].copy(deep=True)
+actual_load = input_dataset.loc[test_indices, "load"].copy(deep=True)
 
-# forecasted_load = input_dataset.copy(deep=True)
-# forecasted_load.loc[test_indices, "load"] = np.nan
+forecasted_load = input_dataset.copy(deep=True)
+forecasted_load.loc[test_indices, "load"] = np.nan
 
-# forecast = create_forecast_pipeline(
-#     pj, forecasted_load, mlflow_tracking_uri="./mlflow_trained_models"
-# )
-# forecast["load"] = actual_load
+forecast = create_forecast_pipeline(
+    pj, forecasted_load, mlflow_tracking_uri="./mlflow_trained_models"
+)
+forecast["load"] = actual_load
 
-# forecast[["forecast", "load"]].plot()
-# plt.show()
+forecast[["forecast", "load"]].plot()
+plt.show()

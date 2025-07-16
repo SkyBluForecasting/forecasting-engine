@@ -1,7 +1,6 @@
 """	Run forecast for a single asset (call orchestration function with asset_id from CLI arg)."""
 
 import argparse
-import logging
 import sys
 from forecasting_engine.orchestration.forecast_runner import generate_forecast_for_asset
 from forecasting_engine.orchestration.logger_factory import get_logger

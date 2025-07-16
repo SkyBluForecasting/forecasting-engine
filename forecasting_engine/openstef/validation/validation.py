@@ -8,9 +8,6 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
-from forecasting_engine.openstef.data_classes.prediction_job import (
-    PredictionJobDataClass,
-)
 from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
 from forecasting_engine.openstef.logging.logger_factory import get_logger
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor
@@ -204,7 +201,7 @@ def calc_completeness_features(
     length_features = len(df_copy.columns)
 
     # Returns the list
-    if type(weights) != np.ndarray:
+    if type(weights) is not np.ndarray:
         list_features = weights.index.tolist()
         df_copy = df_copy[list_features]  # Reorder the df to match weights index (list)
         weights = weights.weight

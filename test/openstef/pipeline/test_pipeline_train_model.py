@@ -693,7 +693,7 @@ class TestTrainModelPipeline(BaseTestCase):
         )
 
         # Assert
-        self.pj.train_horizons_minutes == None
+        self.pj.train_horizons_minutes is None
         assert (
             mock_train_model_pipeline_core.call_args.kwargs["horizons"]
             == DEFAULT_TRAIN_HORIZONS_HOURS

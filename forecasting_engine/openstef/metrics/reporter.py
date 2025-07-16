@@ -179,9 +179,9 @@ class Reporter:
                     os.path.join(report_folder, "weight_plot.html")
                 )
             # write predictors
-            for name, figure in report.data_series_figures.items():
-                if figure:  # only write if figure is not none
-                    figure.write_html(os.path.join(report_folder, f"{name}.html"))
+            for name, figure_name in report.data_series_figures.items():
+                if figure_name:  # only write if figure is not none
+                    figure_name.write_html(os.path.join(report_folder, f"{name}.html"))
 
     def _make_data_series_figures(self, model: OpenstfRegressor) -> dict:
         """Make data series figures."""

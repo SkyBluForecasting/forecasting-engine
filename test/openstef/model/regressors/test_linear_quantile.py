@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501>
 #
 # SPDX-License-Identifier: MPL-2.0
-import pickle
 import unittest
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData

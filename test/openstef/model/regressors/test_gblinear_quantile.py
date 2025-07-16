@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2017-2025 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501>
 #
 # SPDX-License-Identifier: MPL-2.0
-import unittest
 from test.openstef.utils.base import BaseTestCase
 from test.openstef.utils.data import TestData
 from unittest.mock import MagicMock
@@ -9,7 +8,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 import sklearn
-from xgboost import Booster
 
 from forecasting_engine.openstef.feature_engineering.apply_features import (
     apply_features,
