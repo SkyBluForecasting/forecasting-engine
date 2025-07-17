@@ -4,7 +4,7 @@
 import glob
 import os
 import unittest
-from test.unit.utils.data import TestData
+from test.openstef.utils.data import TestData
 
 from forecasting_engine.openstef.pipeline.create_forecast import (
     create_forecast_pipeline_core,

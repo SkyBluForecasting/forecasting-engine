@@ -91,3 +91,23 @@ jobs:
                 pip install --upgrade pip
                 pip install --no-cache-dir -r requirements.txt
             EOF
+
+      - name: Start MLflow Server on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << EOF
+            export MLFLOW_DB_URI="${{ secrets.MLFLOW_DB_URI_STAGING }}"
+            export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
+
+            cd ~/forecasting-engine
+
+            # Kill any existing MLflow server process
+            pkill -f "mlflow server" || true
+
+            # Start MLflow server in the background
+            nohup mlflow server \
+              --backend-store-uri "\$MLFLOW_DB_URI" \
+              --default-artifact-root "\$MLFLOW_ARTIFACT_ROOT" \
+              --host 0.0.0.0 \
+              --port 5050 \
+              > logs/mlflow.log 2>&1 &
+          EOF

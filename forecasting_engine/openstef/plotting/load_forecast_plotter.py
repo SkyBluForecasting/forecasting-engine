@@ -206,7 +206,7 @@ class LoadForecastPlotter(BaseModel):
 
         # Styling configuration
         figure.update_layout(
-            title=f"Load Forecast vs Actual",
+            title="Load Forecast vs Actual",
             xaxis_title="Datetime [UTC]",
             yaxis_title="Load [W]",
             template="plotly_white",

@@ -25,7 +25,7 @@ class OpenstfRegressor(BaseEstimator):
         """Makes `score` method from RegressorMixin available."""
         return RegressorMixin.score(self, X, y)
 
-    ## Define abstract methods required to be implemented by concrete models
+    # Define abstract methods required to be implemented by concrete models
     @property
     @abstractmethod
     def feature_names(self) -> list:

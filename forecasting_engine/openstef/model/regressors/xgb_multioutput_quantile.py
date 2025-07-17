@@ -6,12 +6,10 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import sklearn.base
 import xgboost as xgb
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
-from xgboost import Booster
 
 import forecasting_engine.openstef.metrics.metrics as metrics
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor

@@ -84,7 +84,7 @@ def create_components_forecast_task(
     )
     # Check if input_data is not empty
     if len(input_data) == 0:
-        logger.warning(f"No forecast found. Skipping pid", pid=pj["id"])
+        logger.warning("No forecast found. Skipping pid", pid=pj["id"])
         return
 
     logger.info("retrieving weather data")
@@ -104,7 +104,7 @@ def create_components_forecast_task(
     # Make forecast for the demand, wind and pv components
     forecasts = create_components_forecast_pipeline(pj, input_data, weather_data)
 
-    ## Perform sanity check on index
+    # Perform sanity check on index
     if not isinstance(forecasts.index, pd.core.indexes.datetimes.DatetimeIndex):
         raise ValueError(
             f"Index is not datetime. Received forecasts:{forecasts.head()}"

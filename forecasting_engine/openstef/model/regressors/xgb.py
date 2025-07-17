@@ -4,7 +4,6 @@
 from typing import Optional
 
 import numpy as np
-from sklearn.base import RegressorMixin
 from xgboost import XGBRegressor
 
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor

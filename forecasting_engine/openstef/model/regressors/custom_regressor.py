@@ -7,12 +7,7 @@ from abc import abstractmethod
 from importlib import import_module
 from typing import Type
 
-import pandas as pd
-
 from forecasting_engine.openstef.model.objective import (
-    EVAL_METRIC,
-    TEST_FRACTION,
-    VALIDATION_FRACTION,
     RegressorObjective,
 )
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor

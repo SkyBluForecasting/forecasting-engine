@@ -16,9 +16,12 @@ ktprognoses.egg-info/
 .vscode/
 test/component/mlruns
 test/component/307
-test/unit/trained_models/307
-test/unit/trained_models/mlruns/*
-!test/unit/trained_models/mlruns/893156335105023143/
+test/openstef/trained_models/307
+test/openstef/trained_models/mlruns/*
+!test/openstef/trained_models/mlruns/893156335105023143/
+mlflow_artifacts/
+mlflow_trained_models/
+virtualenv/
 
 # Ignore these files
 .DS_Store

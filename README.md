@@ -1,12 +1,12 @@
-<!--
-SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com>
-
-SPDX-License-Identifier: MPL-2.0
--->
-
 # Forecasting Engine
 
-The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS S3.
+The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS S3, MLFlow, and a PostgreSQL database (for storing ML artifacts):
+
+- Forecasting logic: Core model training and forecasting powered by OpenSTEF.
+- MLflow: Tracks and stores trained forecasting models and metadata in a PostgreSQL-backed MLflow server. Artifacts (trained model files) are stored on AWS S3.
+- AWS S3: Used as the central artifact store for models and forecast output data.
+- PostgreSQL database: Stores MLflow metadata such as experiment and run info.
+- Orchestration components: Custom code to trigger forecasts, retrieve data from S3, handle message queues (SQS), and coordinate pipeline execution.
 
 This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
 
@@ -16,7 +16,7 @@ This repo is designed to be deployed on an EC2 instance and serves as the backen
 forecasting_engine/ **Included in deployments
 ├── openstef/ # Core licensed forecasting logic 
 ├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. 
-├── jobs/ # Executable scripts (polling, cron, CLI entrypoints) 
+├── tasks/ # Executable scripts (polling, cron, CLI entrypoints) 
 scripts/ # Test scripts for local testing ** NOT included in deployments
 test/ # Unit tests  ** NOT included in deployments
 ```
@@ -49,7 +49,7 @@ pip install -r requirements.txt
 pip install -r test-requirements.txt
 ```
 
-4. Create a `.env` file in the root directory with your AWS IAM configuration.
+4. If you want to run some of the code locally which integrates with S3 and the MLFLOW server - create a `.env` file in the root directory with your AWS IAM and MLFLOW configs. Replace the placeholders with actual values. 
 
 ```bash
 # AWS Configuration
@@ -57,8 +57,44 @@ AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_DEFAULT_REGION=us-east-2
 S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
+
+# MLFLOW Config
+MLFLOW_TRACKING_URI=MLFLOW_TRACKING_URI=http://<your-ec2-public-ip>:5050
+
+# MLFLow for local dev
+MLFLOW_DB_URI=get_from_supabase
+MLFLOW_ARTIFACT_ROOT=s3://forecasting-forecasts/mlflow_trained_models/
 ```
 
+## Starting the mlflow server locally:
+
+```bash
+mlflow server --backend-store-uri $MLFLOW_DB_URI --default-artifact-root $MLFLOW_ARTIFACT_ROOT --host 127.0.0.1 --port 5050
+```
+
+Open your browser to `http://localhost:5050` to access MLFLow. 
+
+
+## Running tests
+
+```bash
+pytest test
+```
+
+To run tests and also check coverage:
+
+```bash
+coverage run --source=forecasting_engine -m pytest test/orchestration/ && coverage report -m
+```
+
+## Setting up pre-commit
+
+It is recommended to enable your IDE to run the pre-commit checks before submitting a commit.
+
+```bash
+# pip install pre-commit
+# pre-commit install
+```
 
 # About OpenSTEF
 

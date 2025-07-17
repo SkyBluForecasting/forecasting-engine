@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from forecasting_engine.openstef.logging.logger_factory import get_logger
-from forecasting_engine.openstef.settings import Settings
 
 
 def add_missing_feature_columns(

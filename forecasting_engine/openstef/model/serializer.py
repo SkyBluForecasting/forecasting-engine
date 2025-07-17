@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import json
-import logging
 import os
-import shutil
 from datetime import UTC, datetime
 from json import JSONDecodeError
 from typing import Optional, Union
@@ -23,7 +21,6 @@ from forecasting_engine.openstef.data_classes.model_specifications import (
 from forecasting_engine.openstef.logging.logger_factory import get_logger
 from forecasting_engine.openstef.metrics.reporter import Report
 from forecasting_engine.openstef.model.regressors.regressor import OpenstfRegressor
-from forecasting_engine.openstef.settings import Settings
 
 
 class MLflowSerializer:

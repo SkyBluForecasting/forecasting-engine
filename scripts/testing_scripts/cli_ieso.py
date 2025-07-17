@@ -1,3 +1,6 @@
+import sys
+
+
 from forecasting_engine.openstef.pipeline.train_model import train_model_pipeline
 from forecasting_engine.openstef.pipeline.create_forecast import (
     create_forecast_pipeline,
@@ -6,7 +9,6 @@ from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
 
-import sys
 import pandas as pd
 import webbrowser
 import os
@@ -72,15 +74,23 @@ def create_fsa_data(file_path: str, fsa_value: str):
 fsa_id = "L9M"
 
 # Location of file for training
-training_filename = "raw_ieso_data/PUB_HourlyConsumptionByFSA_202412_v1.csv"
+training_filename = os.path.join(
+    os.path.dirname(__file__),  # directory of cli_ieso.py
+    "raw_ieso_data/PUB_HourlyConsumptionByFSA_202412_v1.csv",
+)
 
 # Location of file for forecasting
-forecasting_filename = "raw_ieso_data/PUB_HourlyConsumptionByFSA_202412_v1.csv"
+forecasting_filename = os.path.join(
+    os.path.dirname(__file__),  # directory of cli_ieso.py
+    "raw_ieso_data/PUB_HourlyConsumptionByFSA_202412_v1.csv",
+)
 
 # Transform the raw input file from IESO into a training data set. Save to CSV.
+output_dir = os.path.join(os.path.dirname(__file__), "data")
+os.makedirs(output_dir, exist_ok=True)
 train_data = create_fsa_data(training_filename, fsa_id)
-train_data.to_csv(f"data/{fsa_id}_train.csv", index=True)
-print(f"CSV file 'data/{fsa_id}_train.csv' created successfully.")
+train_data.to_csv(os.path.join(output_dir, f"{fsa_id}_train.csv"), index=True)
+print(f"CSV file '{output_dir}/{fsa_id}_train.csv' created successfully.")
 
 # Define properties of training/prediction - a 'prediction_job'
 # This pj will generate forecasts at 15min increments at horizons 0.25h, 0.5h etc up
@@ -118,7 +128,7 @@ train, val, test = train_model_pipeline(
     pj,
     train_data,
     check_old_model_age=False,
-    mlflow_tracking_uri="./mlflow_trained_models",
+    mlflow_tracking_uri="http://127.0.0.1:5050",
     artifact_folder="./mlflow_artifacts",
 )
 
