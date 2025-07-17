@@ -3,7 +3,6 @@ import pandas as pd
 from unittest.mock import patch, MagicMock
 from forecasting_engine.orchestration.forecast_runner import (
     generate_forecast_for_asset,
-    append_forecast_rows,
 )
 
 
@@ -42,15 +41,6 @@ def patch_load_training_pd_from_s3(mock_training_data):
 
 
 @pytest.fixture
-def patch_append_forecast_rows(mock_training_data):
-    with patch(
-        "forecasting_engine.orchestration.forecast_runner.append_forecast_rows"
-    ) as mock_append:
-        mock_append.return_value = mock_training_data
-        yield mock_append
-
-
-@pytest.fixture
 def patch_create_forecast_pipeline():
     with patch(
         "forecasting_engine.orchestration.forecast_runner.create_forecast_pipeline"
@@ -63,7 +53,6 @@ class TestGenerateForecastForAsset:
     def test_generate_forecast_success(
         self,
         patch_load_training_pd_from_s3,
-        patch_append_forecast_rows,
         patch_create_forecast_pipeline,
         mock_training_data,
     ):
@@ -79,7 +68,6 @@ class TestGenerateForecastForAsset:
         assert "forecast" in result.columns
         pd.testing.assert_frame_equal(result, mock_forecast)
         patch_load_training_pd_from_s3.assert_called_once_with(asset_id=asset_id)
-        patch_append_forecast_rows.assert_called_once()
         patch_create_forecast_pipeline.assert_called_once()
 
     def test_generate_forecast_training_data_error(
@@ -110,7 +98,6 @@ class TestGenerateForecastForAsset:
     def test_generate_forecast_pipeline_error(
         self,
         patch_load_training_pd_from_s3,
-        patch_append_forecast_rows,
         patch_create_forecast_pipeline,
         mock_training_data,
     ):
@@ -121,7 +108,6 @@ class TestGenerateForecastForAsset:
     def test_generate_forecast_pipeline_exception(
         self,
         patch_load_training_pd_from_s3,
-        patch_append_forecast_rows,
         patch_create_forecast_pipeline,
         mock_training_data,
     ):
@@ -130,34 +116,3 @@ class TestGenerateForecastForAsset:
         )
         with pytest.raises(RuntimeError, match="Some pipeline failure"):
             generate_forecast_for_asset("ASSET_FAIL")
-
-
-class TestAppendForecastRows:
-    @pytest.mark.parametrize(
-        "resolution, horizon, expected_steps",
-        [
-            (60, 180, 3),  # hourly, 3 hours forecast → 3 steps
-            (15, 60, 4),  # 15-minute intervals, 1 hour horizon → 4 steps
-            (30, 90, 3),  # 30-minute intervals, 1.5 hours horizon → 3 steps
-        ],
-    )
-    def test_append_forecast_rows(
-        self, mock_training_data, resolution, horizon, expected_steps
-    ):
-        resolution = 60
-        horizon = 180
-
-        result = append_forecast_rows(mock_training_data, resolution, horizon)
-
-        # Check that the resulting DataFrame has the expected length
-        expected_steps = horizon // resolution
-        assert len(result) == len(mock_training_data) + expected_steps
-
-        # Check the index starts right after the last training timestamp
-        expected_start = mock_training_data.index.max() + pd.Timedelta(
-            minutes=resolution
-        )
-        assert result.index[-expected_steps] == expected_start
-
-        # Check that the forecast 'load' values are NaN
-        assert result["load"][-expected_steps:].isna().all()

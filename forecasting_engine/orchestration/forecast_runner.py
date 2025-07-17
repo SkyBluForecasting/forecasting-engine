@@ -14,8 +14,6 @@ from forecasting_engine.orchestration.s3_utils import (
 from forecasting_engine.orchestration.logger_factory import get_logger
 
 from dotenv import load_dotenv
-import numpy as np
-import pandas as pd
 import os
 
 logger = get_logger(__name__)
@@ -77,15 +75,9 @@ def generate_forecast_for_asset(asset_id: str):
             save_train_forecasts=True,
         )
 
-        forecast_input_data = append_forecast_rows(
-            training_data,
-            resolution_minutes=pj.resolution_minutes,
-            horizon_minutes=pj.horizon_minutes,
-        )
-
         forecast = create_forecast_pipeline(
             pj=pj,
-            input_data=forecast_input_data,
+            input_data=training_data,
             mlflow_tracking_uri=MLFLOW_TRACKING_URI,
         )
 
@@ -101,34 +93,3 @@ def generate_forecast_for_asset(asset_id: str):
     save_forecast_csv_to_s3(df=forecast, asset_id=asset_id)
 
     return forecast
-
-
-# TODO: Determine if we need this
-def append_forecast_rows(
-    training_data: pd.DataFrame, resolution_minutes: int, horizon_minutes: int
-) -> pd.DataFrame:
-    """
-    Appends future datetime rows (based on resolution and horizon) with NaN 'load' values.
-
-    Args:
-        training_data (pd.DataFrame): Original training data.
-        resolution_minutes (int): Forecast resolution (e.g., 15 or 60).
-        horizon_minutes (int): Total forecast horizon in minutes.
-
-    Returns:
-        pd.DataFrame: Extended dataframe including forecast timepoints.
-    """
-    forecast_steps = horizon_minutes // resolution_minutes
-    last_dt = training_data.index.max()
-
-    future_index = pd.date_range(
-        start=last_dt + pd.Timedelta(minutes=resolution_minutes),
-        periods=forecast_steps,
-        freq=f"{resolution_minutes}min",
-        tz="UTC",
-    )
-
-    future_df = pd.DataFrame(index=future_index, columns=training_data.columns)
-    future_df["load"] = np.nan  # Only 'load' must be NaN to indicate forecast targets
-
-    return pd.concat([training_data, future_df])
