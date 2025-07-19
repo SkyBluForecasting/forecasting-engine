@@ -94,20 +94,48 @@ jobs:
 
       - name: Start MLflow Server on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            set -ex
+      
             export MLFLOW_DB_URI="${{ secrets.MLFLOW_DB_URI_STAGING }}"
             export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
-
+      
             cd ~/forecasting-engine
-
-            # Kill any existing MLflow server process
+      
+            # Kill existing MLflow server if running
             pkill -f "mlflow server" || true
-
-            # Start MLflow server in the background
+      
+            # Ensure logs folder exists
+            mkdir -p logs
+      
+            # Start MLflow in background
             nohup mlflow server \
-              --backend-store-uri "\$MLFLOW_DB_URI" \
-              --default-artifact-root "\$MLFLOW_ARTIFACT_ROOT" \
+              --backend-store-uri "$MLFLOW_DB_URI" \
+              --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
               --host 0.0.0.0 \
               --port 5050 \
               > logs/mlflow.log 2>&1 &
+      
+            sleep 5
+      
+            echo "🔍 Checking if MLflow started successfully..."
+      
+            # Check if the process is running
+            if ! pgrep -f "mlflow server" > /dev/null; then
+              echo "❌ MLflow server process not found. Check logs below:"
+              tail -n 30 logs/mlflow.log
+              exit 1
+            fi
+      
+            # Optional: Local curl check
+            if ! curl --fail http://localhost:5050 > /dev/null 2>&1; then
+              echo "❌ MLflow did not respond on localhost:5050. Check logs below:"
+              tail -n 30 logs/mlflow.log
+              exit 1
+            fi
+      
+            echo "✅ MLflow server started and is responsive."
+      
+            # Show final log output
+            tail -n 20 logs/mlflow.log
           EOF
