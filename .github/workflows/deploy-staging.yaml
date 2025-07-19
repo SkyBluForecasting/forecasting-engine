@@ -56,41 +56,43 @@ jobs:
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
                 'ls -l ~/forecasting-engine && head -n 5 ~/forecasting-engine/.env'
 
-
       - name: Set up Python 3.11 virtualenv and install dependencies
         run: |
-            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-                set -euxo pipefail
-                cd ~/forecasting-engine
-            
-                # Install Python 3.11 if not present
-                if ! command -v python3.11 &> /dev/null; then
-                    sudo dnf install -y python3.11
-                    sudo dnf clean all
-                fi
-            
-                # Clean up package manager caches to free disk space
-                sudo rm -rf /var/cache/dnf
-                sudo rm -rf /var/lib/dnf/history.*
-                sudo dnf clean all
-            
-                # Clean up pip cache to reduce space usage
-                rm -rf ~/.cache/pip
-            
-                # Create venv if not exists
-                if [ ! -d "venv" ]; then
-                    python3.11 -m venv venv
-                fi
-            
-                source venv/bin/activate
-
-                # Use temp dir on root disk to avoid small /tmp space issue
-                mkdir -p ~/tmp
-                export TMPDIR=~/tmp
-
-                pip install --upgrade pip
-                pip install --no-cache-dir -r requirements.txt
-            EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            set -euxo pipefail
+            cd ~/forecasting-engine
+      
+            # Install Python 3.11 if not present
+            if ! command -v python3.11 &> /dev/null; then
+              sudo dnf install -y python3.11
+              sudo dnf clean all
+            fi
+      
+            # Clean package manager caches to free disk space
+            sudo rm -rf /var/cache/dnf
+            sudo rm -rf /var/lib/dnf/history.*
+            sudo dnf clean all
+      
+            # Clean pip cache to reduce space usage
+            rm -rf ~/.cache/pip
+      
+            # Recreate virtual environment every time to avoid corruption
+            rm -rf venv
+            echo "Creating virtualenv with Python version:"
+            python3.11 --version
+            python3.11 -m venv venv
+      
+            # Activate virtualenv
+            source venv/bin/activate
+      
+            # Use temp dir on root disk to avoid small /tmp space issue
+            mkdir -p ~/tmp
+            export TMPDIR=~/tmp
+      
+            # Upgrade pip and install dependencies without cache
+            pip install --upgrade pip
+            pip install --no-cache-dir -r requirements.txt
+          EOF
 
       - name: Start MLflow Server on EC2
         run: |
