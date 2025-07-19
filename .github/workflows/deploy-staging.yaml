@@ -103,6 +103,9 @@ jobs:
             export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
       
             cd ~/forecasting-engine
+
+            # Activate virtualenv
+            source venv/bin/activate
       
             # Kill existing MLflow server if running
             pkill -f "mlflow server" || true
