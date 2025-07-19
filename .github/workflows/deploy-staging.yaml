@@ -121,7 +121,7 @@ jobs:
               --port 5050 \
               > logs/mlflow.log 2>&1 &
       
-            sleep 5
+            sleep 10
       
             echo "🔍 Checking if MLflow started successfully..."
       
