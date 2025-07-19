@@ -60,7 +60,7 @@ jobs:
       - name: Set up Python 3.11 virtualenv and install dependencies
         run: |
             ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-                set -ex
+                set -euxo pipefail
                 cd ~/forecasting-engine
             
                 # Install Python 3.11 if not present
