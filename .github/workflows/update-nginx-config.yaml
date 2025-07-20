@@ -12,11 +12,29 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
-      - name: Configure nginx and restart
+      - name: Configure nginx and restart safely
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF' || exit_code=$?; true
             set -euxo pipefail
-            sudo htpasswd -bc /etc/nginx/.htpasswd "${{ secrets.MLFLOW_BASIC_AUTH_USER }}" "${{ secrets.MLFLOW_BASIC_AUTH_PASSWORD }}"
+
+            # Install nginx if missing (detect package manager)
+            if ! command -v nginx > /dev/null; then
+              if command -v dnf > /dev/null; then
+                sudo dnf install -y nginx
+              elif command -v apt-get > /dev/null; then
+                sudo apt-get update
+                sudo apt-get install -y nginx
+              else
+                echo "No known package manager found to install nginx"
+                exit 1
+              fi
+              sudo systemctl enable nginx
+            fi
+
+            # Create/update basic auth file (overwrite)
+            sudo htpasswd -bcm /etc/nginx/.htpasswd "${{ secrets.MLFLOW_BASIC_AUTH_USER }}" "${{ secrets.MLFLOW_BASIC_AUTH_PASSWORD }}"
+
+            # Write nginx config
             sudo tee /etc/nginx/conf.d/mlflow.conf > /dev/null << 'NGINXCONF'
             server {
                 listen 80;
@@ -31,5 +49,19 @@ jobs:
                 }
             }
             NGINXCONF
-            sudo systemctl restart nginx
+
+            # Test nginx config before restarting
+            if sudo nginx -t; then
+              sudo systemctl restart nginx
+              echo "✅ NGINX restarted successfully."
+            else
+              echo "❌ NGINX config test failed! Not restarting."
+              exit 1
+            fi
           EOF
+
+          # Catch SSH errors or timeouts to avoid hanging the workflow
+          if [ "${exit_code:-0}" != "0" ]; then
+            echo "⚠️ SSH command failed or timed out with exit code $exit_code"
+            exit $exit_code
+          fi
