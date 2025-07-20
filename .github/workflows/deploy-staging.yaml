@@ -35,9 +35,6 @@ jobs:
             echo "✅ SSH key has been added to ssh-agent."
             ssh-add -l || echo "⚠️ No SSH keys loaded."
 
-      - name: Ensure install_nginx.sh is executable
-        run: chmod +x .github/scripts/install_nginx.sh
-
       - name: Copy only needed files to EC2
         run: |
           set -x
@@ -45,7 +42,7 @@ jobs:
             --exclude='.git' \
             --exclude='scripts' \
             -e "ssh -o StrictHostKeyChecking=no" \
-            forecasting_engine/ requirements.txt .github/scripts/install_nginx.sh \
+            forecasting_engine/ requirements.txt \
             ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
         
       - name: Upload .env file to EC2 root folder (~/forecasting-engine)
@@ -148,17 +145,12 @@ jobs:
             tail -n 20 logs/mlflow.log
           EOF
 
-      - name: Install NGINX via script on EC2
-        run: |
-          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-            bash ~/forecasting-engine/install_nginx.sh
-          EOF
       - name: Configure nginx with basic auth and start service
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
             set -ex
             # Create htpasswd file (replace USERNAME and PASSWORD as needed)
-            sudo htpasswd -bc /etc/nginx/.htpasswd USERNAME PASSWORD
+            sudo htpasswd -bc /etc/nginx/.htpasswd "${{ secrets.MLFLOW_BASIC_AUTH_USER }}" "${{ secrets.MLFLOW_BASIC_AUTH_PASSWORD }}"
 
             # Write nginx config (example for mlflow with basic auth)
             sudo tee /etc/nginx/conf.d/mlflow.conf > /dev/null << 'NGINXCONF'
