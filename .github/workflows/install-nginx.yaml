@@ -1,0 +1,18 @@
+name: One-Time NGINX Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-nginx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
+
+      - name: Upload and run install script
+        run: |
+          scp -o StrictHostKeyChecking=no .github/scripts/install_nginx.sh ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/install_nginx.sh
+          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} "bash ~/install_nginx.sh"
