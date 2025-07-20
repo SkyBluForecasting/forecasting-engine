@@ -76,9 +76,11 @@ jobs:
               --port 5050 \
               > logs/mlflow.log 2>&1 &
 
+            disown
+
             echo "🔁 Waiting for MLflow to become responsive..."
             for i in {1..24}; do
-              if curl --fail --silent http://localhost:5050 > /dev/null; then
+              if curl --fail --silent --max-time 3 http://localhost:5050 > /dev/null; then
                 echo "✅ MLflow is up!"
                 break
               fi
@@ -86,7 +88,6 @@ jobs:
               sleep 5
             done
 
-            # Final confirmation
             if ! curl --fail --silent http://localhost:5050 > /dev/null; then
               echo "❌ MLflow not responsive after retry loop:"
               tail -n 30 logs/mlflow.log
@@ -95,5 +96,3 @@ jobs:
 
             echo "✅ MLflow started successfully"
             tail -n 20 logs/mlflow.log
-          EOF
-  
