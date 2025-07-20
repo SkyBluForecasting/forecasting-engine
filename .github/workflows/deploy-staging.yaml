@@ -35,15 +35,18 @@ jobs:
             echo "✅ SSH key has been added to ssh-agent."
             ssh-add -l || echo "⚠️ No SSH keys loaded."
 
+      - name: Ensure install_nginx.sh is executable
+        run: chmod +x .github/scripts/install_nginx.sh
+
       - name: Copy only needed files to EC2
         run: |
-            set -x
-            rsync -avz --delete \
-                --exclude='.git' \
-                --exclude='scripts' \
-                -e "ssh -o StrictHostKeyChecking=no" \
-                forecasting_engine/ requirements.txt \
-                ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
+          set -x
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='scripts' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            forecasting_engine/ requirements.txt .github/scripts/install_nginx.sh \
+            ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
         
       - name: Upload .env file to EC2 root folder (~/forecasting-engine)
         run: |
@@ -145,11 +148,11 @@ jobs:
             tail -n 20 logs/mlflow.log
           EOF
 
-      - name: Install NGINX and tools
+      - name: Install NGINX via script on EC2
         run: |
-          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} "
-            sudo stdbuf -oL dnf install -y nginx httpd-tools
-          "
+          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            bash ~/forecasting-engine/install_nginx.sh
+          EOF
       - name: Configure nginx with basic auth and start service
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
