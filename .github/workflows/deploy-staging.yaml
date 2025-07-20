@@ -69,30 +69,29 @@ jobs:
             pkill -f "mlflow server" || true
             mkdir -p logs
 
+            # Start MLflow server in background, redirect output to log file
             nohup mlflow server \
               --backend-store-uri "$MLFLOW_DB_URI" \
               --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
               --host 127.0.0.1 \
-              --port 5050 \
-              > logs/mlflow.log 2>&1 &
+              --port 5050 > logs/mlflow.log 2>&1 &
 
-            disown
+            echo "MLflow server started, waiting for it to become responsive..."
 
-            echo "🔁 Waiting for MLflow to become responsive..."
-            for i in {1..24}; do
-              if curl --fail --silent --max-time 3 http://localhost:5050 > /dev/null; then
-                echo "✅ MLflow is up!"
+            # Wait for MLflow to respond, retry up to 24 times (2 minutes total)
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --max-time 3 http://localhost:5050; then
+                echo "✅ MLflow is ready on attempt $attempt!"
                 break
+              else
+                echo "⏳ Attempt $attempt: MLflow not ready yet, sleeping 5 seconds..."
+                sleep 5
               fi
-              echo "⏳ Attempt $i: MLflow not ready yet"
-              sleep 5
             done
 
-            if ! curl --fail --silent http://localhost:5050 > /dev/null; then
-              echo "❌ MLflow not responsive after retry loop:"
-              tail -n 30 logs/mlflow.log
+            # Optional: show last few lines of log if MLflow never became ready
+            if ! curl --fail --silent --max-time 3 http://localhost:5050; then
+              echo "❌ MLflow did not become ready after max attempts. Logs:"
+              tail -n 20 logs/mlflow.log
               exit 1
             fi
-
-            echo "✅ MLflow started successfully"
-            tail -n 20 logs/mlflow.log
