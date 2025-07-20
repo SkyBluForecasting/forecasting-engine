@@ -148,7 +148,7 @@ jobs:
       - name: Install NGINX and tools
         run: |
           ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} "
-            sudo dnf install -y nginx httpd-tools
+            sudo stdbuf -oL dnf install -y nginx httpd-tools
           "
       - name: Configure nginx with basic auth and start service
         run: |
