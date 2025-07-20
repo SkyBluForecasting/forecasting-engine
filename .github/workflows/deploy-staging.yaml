@@ -117,7 +117,7 @@ jobs:
             nohup mlflow server \
               --backend-store-uri "$MLFLOW_DB_URI" \
               --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
-              --host 0.0.0.0 \
+              --host 127.0.0.1 \
               --port 5050 \
               > logs/mlflow.log 2>&1 &
       
