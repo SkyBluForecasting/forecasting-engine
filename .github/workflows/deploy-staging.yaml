@@ -1,4 +1,4 @@
-name: Deploy Application
+name: Deploy to Staging
 
 on:
   workflow_dispatch:
@@ -10,8 +10,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -22,7 +23,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
-      - name: Sync app code to EC2
+      - name: Copy app files to EC2
         run: |
           rsync -avz --delete \
             --exclude='.git' \
@@ -37,28 +38,33 @@ jobs:
           scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
           rm temp.env
 
-      - name: Restart MLflow server on EC2
+      - name: Install Python deps and start MLflow
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-            set -ex
+          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+            set -euxo pipefail
             cd ~/forecasting-engine
+
+            if ! command -v python3.11 &>/dev/null; then
+              sudo dnf install -y python3.11
+            fi
+
+            rm -rf venv ~/.cache/pip
+            python3.11 -m venv venv
             source venv/bin/activate
 
-            # Kill existing MLflow server if running
-            pkill -f "mlflow server" || true
+            pip install --upgrade pip
+            pip install --no-cache-dir -r requirements.txt
 
-            # Start MLflow on localhost:5050
+            export MLFLOW_DB_URI="${{ secrets.MLFLOW_DB_URI_STAGING }}"
+            export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
+
+            pkill -f "mlflow server" || true
             nohup mlflow server \
-              --backend-store-uri "${{ secrets.MLFLOW_DB_URI_STAGING }}" \
-              --default-artifact-root "${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}" \
+              --backend-store-uri "$MLFLOW_DB_URI" \
+              --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
               --host 127.0.0.1 \
-              --port 5050 \
-              > logs/mlflow.log 2>&1 &
+              --port 5050 > logs/mlflow.log 2>&1 &
 
             sleep 10
-            if ! pgrep -f "mlflow server" > /dev/null; then
-              echo "MLflow server not running, check logs:"
-              tail -n 30 logs/mlflow.log
-              exit 1
-            fi
+            pgrep -f "mlflow server" || (echo "MLflow failed" && tail -n 30 logs/mlflow.log && exit 1)
           EOF

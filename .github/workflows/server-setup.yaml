@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-server:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -15,7 +15,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
-      - name: Run system setup script (install nginx, python3.11, etc)
+      - name: Upload and run install script
         run: |
           scp -o StrictHostKeyChecking=no .github/scripts/install_nginx.sh ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/install_nginx.sh
           ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} "bash ~/install_nginx.sh"
