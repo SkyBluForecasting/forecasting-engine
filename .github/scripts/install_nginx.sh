@@ -12,7 +12,7 @@ set -euxo pipefail
 PING_LOOP_PID=$!
 
 # Kill the keepalive loop no matter how the script exits
-trap "kill $PING_LOOP_PID 2>/dev/null" EXIT
+trap "kill $PING_LOOP_PID 2>/dev/null || true" EXIT
 
 # Improve DNF performance
 echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
@@ -23,8 +23,9 @@ sudo dnf -v install -y --nogpgcheck --setopt=install_weak_deps=False nginx httpd
 
 echo "✅ NGINX installation complete"
 
-# Explicitly kill the keepalive loop
-kill "$PING_LOOP_PID"
-wait "$PING_LOOP_PID" 2>/dev/null || true
+# Stop the keepalive loop without causing failure
+if kill "$PING_LOOP_PID" 2>/dev/null; then
+  wait "$PING_LOOP_PID" 2>/dev/null || true
+fi
 
 exit 0
