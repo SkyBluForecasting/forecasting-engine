@@ -46,8 +46,7 @@ jobs:
 
             # Install Python 3.11 if not present
             if ! command -v python3.11 &> /dev/null; then
-              sudo dnf install -y python3.11
-              sudo dnf clean all
+              sudo dnf install -y python3.11 || sudo apt-get install -y python3.11 || true
             fi
 
             # Recreate virtual environment
@@ -63,13 +62,15 @@ jobs:
             pip install --upgrade pip
             pip install --no-cache-dir -r requirements.txt
 
-            # Start MLflow
+            # Set env vars
             export MLFLOW_DB_URI="${{ secrets.MLFLOW_DB_URI_STAGING }}"
             export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
+
+            # Kill existing MLflow if any
             pkill -f "mlflow server" || true
             mkdir -p logs
 
-            # Start MLflow server in background, redirect output to log file
+            # Start MLflow server in background
             nohup mlflow server \
               --backend-store-uri "$MLFLOW_DB_URI" \
               --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
@@ -77,10 +78,11 @@ jobs:
               --port 5050 > logs/mlflow.log 2>&1 &
 
             echo "MLflow server started, waiting for it to become responsive..."
+            sleep 3  # wait a moment before starting polling
 
-            # Wait for MLflow to respond, retry up to 24 times (2 minutes total)
+            # Now poll for readiness
             for attempt in $(seq 1 24); do
-              if curl --fail --silent --max-time 3 http://localhost:5050; then
+              if curl --fail --silent --max-time 3 http://localhost:5050 > /dev/null; then
                 echo "✅ MLflow is ready on attempt $attempt!"
                 break
               else
@@ -89,9 +91,10 @@ jobs:
               fi
             done
 
-            # Optional: show last few lines of log if MLflow never became ready
-            if ! curl --fail --silent --max-time 3 http://localhost:5050; then
+            # If still not ready, show logs and fail
+            if ! curl --fail --silent --max-time 3 http://localhost:5050 > /dev/null; then
               echo "❌ MLflow did not become ready after max attempts. Logs:"
               tail -n 20 logs/mlflow.log
               exit 1
             fi
+          EOF
