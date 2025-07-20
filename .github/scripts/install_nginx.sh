@@ -24,7 +24,7 @@ sudo dnf -v install -y --nogpgcheck --setopt=install_weak_deps=False nginx httpd
 echo "✅ NGINX installation complete"
 
 # Explicitly kill the keepalive loop
-kill "$PING_LOOP_PID"
-wait "$PING_LOOP_PID" 2>/dev/null || true
+kill $PING_LOOP_PID 2>/dev/null || true
+wait $PING_LOOP_PID 2>/dev/null || true
 
 exit 0
