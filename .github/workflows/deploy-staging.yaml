@@ -23,7 +23,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY_STAGING }}
 
-      - name: Copy app files to EC2
+      - name: Copy only needed files to EC2
         run: |
           rsync -avz --delete \
             --exclude='.git' \
@@ -32,39 +32,72 @@ jobs:
             forecasting_engine/ requirements.txt \
             ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
 
-      - name: Upload .env to EC2
+      - name: Upload .env file to EC2
         run: |
           echo "${{ secrets.ENV_FILE_STAGING }}" > temp.env
           scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
           rm temp.env
 
-      - name: Install Python deps and start MLflow
+      - name: Install dependencies and start MLflow
         run: |
-          ssh -tt -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
             set -euxo pipefail
             cd ~/forecasting-engine
-
-            if ! command -v python3.11 &>/dev/null; then
-              sudo dnf install -y python3.11
+      
+            # Install Python 3.11 if not present
+            if ! command -v python3.11 &> /dev/null; then
+              sudo dnf install -y python3.11 || sudo apt-get install -y python3.11 || true
             fi
-
-            rm -rf venv ~/.cache/pip
+      
+            # Recreate virtual environment
+            rm -rf venv
             python3.11 -m venv venv
             source venv/bin/activate
-
+      
+            # Use root disk for temp files instead of /tmp
+            mkdir -p ~/tmp
+            export TMPDIR=~/tmp
+      
+            # Install dependencies
             pip install --upgrade pip
             pip install --no-cache-dir -r requirements.txt
-
+      
+            # Set env vars
             export MLFLOW_DB_URI="${{ secrets.MLFLOW_DB_URI_STAGING }}"
             export MLFLOW_ARTIFACT_ROOT="${{ secrets.MLFLOW_S3_BUCKET_URI_STAGING }}"
-
+      
+            # Kill existing MLflow if any
             pkill -f "mlflow server" || true
+            mkdir -p logs
+      
+            # Start MLflow server in background
             nohup mlflow server \
               --backend-store-uri "$MLFLOW_DB_URI" \
               --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
               --host 127.0.0.1 \
               --port 5050 > logs/mlflow.log 2>&1 &
-
-            sleep 10
-            pgrep -f "mlflow server" || (echo "MLflow failed" && tail -n 30 logs/mlflow.log && exit 1)
+      
+            echo "MLflow server started, waiting for it to become responsive..."
+            sleep 3  # initial buffer before polling
+      
+            # Wait for MLflow to become ready
+            ready=false
+            for attempt in $(seq 1 24); do
+              if curl --fail --silent --max-time 3 http://localhost:5050 > /dev/null; then
+                echo "✅ MLflow is ready on attempt $attempt!"
+                ready=true
+                break
+              else
+                echo "⏳ Attempt $attempt: MLflow not ready yet, sleeping 5 seconds..."
+                sleep 5
+              fi
+            done
+      
+            # Show logs and fail if MLflow didn't start
+            if [ "$ready" = false ]; then
+              echo "❌ MLflow did not become ready after max attempts. Logs:"
+              tail -n 20 logs/mlflow.log
+              exit 1
+            fi
           EOF
+      
