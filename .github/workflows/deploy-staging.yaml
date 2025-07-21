@@ -46,39 +46,14 @@ jobs:
           scp -o StrictHostKeyChecking=no temp.htpasswd ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.htpasswd
           rm temp.htpasswd
 
-      - name: Run Docker Compose on EC2 to build and start containers
+      - name: Upload deploy script to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-            set -euxo pipefail
-            cd ~/forecasting-engine
+          scp -o StrictHostKeyChecking=no .github/scripts/deploy.sh ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/deploy.sh
 
-            # Ensure docker and docker-compose are installed and running
-            if ! command -v docker > /dev/null; then
-              echo "Docker not found, please install docker on the EC2 instance"
-              exit 1
-            fi
-
-            if ! command -v docker-compose > /dev/null; then
-              echo "docker-compose not found, please install docker-compose on the EC2 instance"
-              exit 1
-            fi
-
-            # Pull latest images/build from Dockerfiles and start containers detached
-            docker-compose down || true
-            docker-compose up -d --build
-
-            # Optional: wait for mlflow container to become healthy or responsive
-            for i in $(seq 1 24); do
-              if curl --fail --silent --max-time 3 http://localhost:5050; then
-                echo "✅ MLflow is ready!"
-                exit 0
-              else
-                echo "⏳ Waiting for MLflow to become ready..."
-                sleep 5
-              fi
-            done
-
-            echo "❌ MLflow did not become ready in time"
-            docker-compose logs mlflow
-            exit 1
-          EOF
+      - name: Run deploy script on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o ServerAliveInterval=30 \
+              -o ServerAliveCountMax=4 \
+              ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
+              'chmod +x ~/forecasting-engine/deploy.sh && ~/forecasting-engine/deploy.sh'
