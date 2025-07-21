@@ -1,4 +1,4 @@
-FROM yourrepo/base:latest
+FROM forecasting-base:latest
 
 WORKDIR /app
 
