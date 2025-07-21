@@ -23,6 +23,9 @@ services:
       - "80:80"
     depends_on:
       - mlflow
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro
 
   forecasting:
     build:
@@ -33,4 +36,5 @@ services:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
-      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app
+    command: tail -f /dev/null  # Keeps container running so you can exec into it

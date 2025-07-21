@@ -1,14 +1,15 @@
-FROM python:3.11-slim
+FROM yourrepo/base:latest
 
 WORKDIR /app
 
-# Copy requirements from repo root
-COPY requirements.txt ./requirements.txt
-
-# Copy the whole forecasting_engine folder with all subfolders
 COPY forecasting_engine ./forecasting_engine
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# mlflow Dockerfile:
+CMD mlflow server \
+    --backend-store-uri "$MLFLOW_DB_URI" \
+    --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
+    --host 0.0.0.0 \
+    --port 5050
 
-# No entrypoint - run scripts by specifying them explicitly
+# forecasting Dockerfile (no CMD):
+# just run scripts explicitly in your container commands
