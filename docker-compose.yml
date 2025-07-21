@@ -12,20 +12,17 @@ services:
       - ./mlflow.db:/app/mlflow.db
       - ./artifacts:/mlflow/artifacts
     expose:
-      - 5050
+      - 5050  # expose for nginx internal communication
 
   nginx:
     build:
       context: .
       dockerfile: Dockerfile.nginx
     container_name: mlflow-nginx
-    ports:
-      - "80:80"
     depends_on:
       - mlflow
-    volumes:
-      - ./mlflow-nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./.htpasswd:/etc/nginx/.htpasswd:ro
+    ports:
+      - "80:80"  # your public-facing port
 
   forecasting:
     build:
