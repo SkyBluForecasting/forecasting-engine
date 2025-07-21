@@ -11,8 +11,8 @@ services:
     volumes:
       - ./mlflow.db:/app/mlflow.db
       - ./artifacts:/mlflow/artifacts
-    expose:
-      - 5050  # expose for nginx internal communication
+    ports:
+      - "5050:5050"  # maps container port 5050 to host port 5050
 
   nginx:
     build:
