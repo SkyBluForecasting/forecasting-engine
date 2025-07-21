@@ -46,6 +46,13 @@ jobs:
           scp -o StrictHostKeyChecking=no temp.htpasswd ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.htpasswd
           rm temp.htpasswd
 
+      - name: Verify .htpasswd on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << EOF
+            echo "Contents of deployed .htpasswd:"
+            cat ~/forecasting-engine/.htpasswd | cat -A
+          EOF
+
       - name: Upload deploy script to EC2
         run: |
           scp -o StrictHostKeyChecking=no .github/scripts/deploy.sh ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/deploy.sh
@@ -62,4 +69,4 @@ jobs:
                 # Just run the deploy script (it now handles everything)
                 chmod +x deploy.sh
                 DOCKER_BUILDKIT=0 ./deploy.sh
-              EOF
+          EOF
