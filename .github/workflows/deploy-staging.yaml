@@ -40,18 +40,13 @@ jobs:
           scp -o StrictHostKeyChecking=no temp.env ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.env
           rm temp.env
 
-      - name: Upload .htpasswd file to EC2
-        run: |
-          echo "${{ secrets.HTPASSWD_STAGING }}" > temp.htpasswd
-          scp -o StrictHostKeyChecking=no temp.htpasswd ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/.htpasswd
-          rm temp.htpasswd
-
-      - name: Verify .htpasswd on EC2
+      - name: Upload .htpasswd file to EC2 (fixed)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << EOF
-            echo "Contents of deployed .htpasswd:"
-            cat ~/forecasting-engine/.htpasswd | cat -A
-          EOF
+cat > ~/forecasting-engine/.htpasswd << 'HTPASSWD'
+${{ secrets.HTPASSWD_STAGING }}
+HTPASSWD
+EOF
 
       - name: Upload deploy script to EC2
         run: |
@@ -63,10 +58,8 @@ jobs:
               -o ServerAliveInterval=30 \
               -o ServerAliveCountMax=4 \
               ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
-                set -euxo pipefail
-                cd ~/forecasting-engine
-      
-                # Just run the deploy script (it now handles everything)
-                chmod +x deploy.sh
-                DOCKER_BUILDKIT=0 ./deploy.sh
-          EOF
+set -euxo pipefail
+cd ~/forecasting-engine
+chmod +x deploy.sh
+DOCKER_BUILDKIT=0 ./deploy.sh
+EOF
