@@ -55,5 +55,16 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
               -o ServerAliveInterval=30 \
               -o ServerAliveCountMax=4 \
-              ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} \
-              'chmod +x ~/forecasting-engine/deploy.sh && ~/forecasting-engine/deploy.sh'
+              ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
+                set -euxo pipefail
+                cd ~/forecasting-engine
+
+                # Cleanup Docker system to free space
+                docker system prune -af || true
+
+                # Make sure the deploy script is executable
+                chmod +x deploy.sh
+
+                # Run the deploy script with BuildKit disabled
+                DOCKER_BUILDKIT=0 ./deploy.sh
+              EOF
