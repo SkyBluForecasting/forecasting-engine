@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow
+    env_file:
+      - .env
+    volumes:
+      - ./mlflow.db:/app/mlflow.db
+      - ./artifacts:/mlflow/artifacts
+    expose:
+      - 5050
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: mlflow-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - mlflow
+
+  forecasting:
+    build:
+      context: .
+      dockerfile: Dockerfile.forecasting
+    container_name: forecasting-tasks
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+      - ./requirements.txt:/app/requirements.txt

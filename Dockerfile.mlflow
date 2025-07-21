@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY forecasting_engine/ ./forecasting_engine/
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 5050
+
+RUN mkdir -p /mlflow/artifacts
+
+CMD mlflow server \
+    --backend-store-uri "$MLFLOW_DB_URI" \
+    --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
+    --host 0.0.0.0 \
+    --port 5050
