@@ -31,7 +31,7 @@ jobs:
             --exclude='mlflow.db' \
             --exclude='artifacts' \
             --exclude='mlruns' \
-            --exclude='test \
+            --exclude='test' \
             ./ \
             ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
 
