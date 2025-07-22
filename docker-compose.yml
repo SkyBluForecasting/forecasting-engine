@@ -14,15 +14,15 @@ services:
     ports:
       - "5050:5050"  # maps container port 5050 to host port 5050
 
-  nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
-    container_name: mlflow-nginx
-    depends_on:
-      - mlflow
-    ports:
-      - "80:80"  # your public-facing port
+  # nginx:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.nginx
+  #   container_name: mlflow-nginx
+  #   depends_on:
+  #     - mlflow
+  #   ports:
+  #     - "80:80"  # your public-facing port
 
   forecasting:
     build:
