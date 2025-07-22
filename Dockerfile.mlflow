@@ -6,8 +6,6 @@ COPY forecasting_engine/ ./forecasting_engine/
 
 EXPOSE 5050
 
-RUN mkdir -p /mlflow/artifacts
-
 CMD mlflow server \
     --backend-store-uri "$MLFLOW_DB_URI" \
     --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
