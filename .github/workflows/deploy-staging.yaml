@@ -30,6 +30,8 @@ jobs:
             --exclude='scripts' \
             --exclude='mlflow.db' \
             --exclude='artifacts' \
+            --exclude='**/__pycache__/' \
+            --exclude='**/*.pyc' \
             --exclude='mlruns' \
             --exclude='test' \
             -e "ssh -o StrictHostKeyChecking=no" \
