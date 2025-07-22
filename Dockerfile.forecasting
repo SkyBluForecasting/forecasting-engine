@@ -1,5 +1,7 @@
 FROM forecasting-base:latest
 
+ENV PYTHONPATH="/app"
+
 WORKDIR /app
 
 COPY forecasting_engine ./forecasting_engine

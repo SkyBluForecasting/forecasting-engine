@@ -30,6 +30,8 @@ jobs:
             --exclude='scripts' \
             --exclude='mlflow.db' \
             --exclude='artifacts' \
+            --exclude='mlruns' \
+            --exclude='test/unit/trained_models/mlruns' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
             ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }}:~/forecasting-engine/
