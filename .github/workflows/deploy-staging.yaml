@@ -69,4 +69,4 @@ jobs:
                 # Just run the deploy script (it now handles everything)
                 chmod +x deploy.sh
                 DOCKER_BUILDKIT=0 ./deploy.sh
-              EOF
+          EOF
