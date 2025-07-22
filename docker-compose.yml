@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow
+    env_file:
+      - .env
+    volumes:
+      - ./mlflow.db:/app/mlflow.db
+      - ./artifacts:/mlflow/artifacts
+    ports:
+      - "5050:5050"  # maps container port 5050 to host port 5050
+
+  # nginx:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.nginx
+  #   container_name: mlflow-nginx
+  #   depends_on:
+  #     - mlflow
+  #   ports:
+  #     - "80:80"  # your public-facing port
+
+  forecasting:
+    build:
+      context: .
+      dockerfile: Dockerfile.forecasting
+    container_name: forecasting-tasks
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+    working_dir: /app
+    command: tail -f /dev/null  # Keeps container running so you can exec into it
