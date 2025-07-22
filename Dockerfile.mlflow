@@ -9,7 +9,7 @@ EXPOSE 5050
 RUN mkdir -p /mlflow/artifacts
 
 CMD mlflow server \
-    --backend-store-uri "$MLFLOW_DB_URI_STAGING" \
-    --default-artifact-root "$MLFLOW_S3_BUCKET_URI_STAGING" \
+    --backend-store-uri "$MLFLOW_DB_URI" \
+    --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
     --host 0.0.0.0 \
     --port 5050
