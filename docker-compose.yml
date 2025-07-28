@@ -8,7 +8,6 @@ services:
     container_name: mlflow
     env_file:
       - .env
-    volumes:
     ports:
       - "5050:5050"  # maps container port 5050 to host port 5050
 
