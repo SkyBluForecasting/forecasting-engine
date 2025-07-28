@@ -28,7 +28,6 @@ jobs:
           rsync -avz --delete \
             --exclude='.git' \
             --exclude='scripts' \
-            --exclude='mlflow.db' \
             --exclude='artifacts' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
