@@ -2,7 +2,7 @@
 
 The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS S3, MLFlow, and a PostgreSQL database (for storing ML artifacts):
 
-- Forecasting logic: Core model training and forecasting powered by OpenSTEF.
+- OpenStef forecasting logic: Core model training and forecasting powered by OpenSTEF.
 - MLflow: Tracks and stores trained forecasting models and metadata in a PostgreSQL-backed MLflow server. Artifacts (trained model files) are stored on AWS S3.
 - AWS S3: Used as the central artifact store for models and forecast output data.
 - PostgreSQL database: Stores MLflow metadata such as experiment and run info.
@@ -60,10 +60,8 @@ S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
 
 # MLFLOW Config
 MLFLOW_TRACKING_URI=MLFLOW_TRACKING_URI=http://<your-ec2-public-ip>:5050
-
-# MLFLow for local dev
-MLFLOW_DB_URI=get_from_supabase
-MLFLOW_ARTIFACT_ROOT=s3://forecasting-forecasts/mlflow_trained_models/
+MLFLOW_DB_URI=get_from_supabase_session_pooler
+MLFLOW_ARTIFACT_ROOT=path-to-mlflow-s3-artifacts-folder
 ```
 
 ## Starting the mlflow server locally:
@@ -74,6 +72,49 @@ mlflow server --backend-store-uri $MLFLOW_DB_URI --default-artifact-root $MLFLOW
 
 Open your browser to `http://localhost:5050` to access MLFLow. 
 
+
+## Docker Setup
+
+This project includes Docker configurations for containerized deployment and development. There are three Dockerfiles and a docker-compose setup:
+
+### Dockerfiles
+
+- **`Dockerfile.base`**: Base image with Python 3.11 and dependencies installed
+- **`Dockerfile.mlflow`**: MLflow server container for model tracking and artifact storage
+- **`Dockerfile.forecasting`**: Forecasting engine container for running prediction tasks
+
+### Using Docker Compose (Recommended)
+
+The easiest way to run the entire system is using docker-compose:
+
+1. **Build and start all services:**
+```bash
+docker-compose up --build
+```
+
+2. **Run in detached mode:**
+```bash
+docker-compose up -d --build
+```
+
+3. **Stop all services:**
+```bash
+docker-compose down
+```
+
+4. **View logs:**
+```bash
+docker-compose logs -f mlflow
+docker-compose logs -f forecasting
+```
+
+### Accessing Services
+
+- **MLflow UI**: http://localhost:5050
+- **Forecasting container**: Execute commands inside the container. E.g, :
+```bash
+docker exec -it forecasting-tasks python forecasting_engine/tasks/run_single_forecast.py L9M
+```
 
 ## Running tests
 

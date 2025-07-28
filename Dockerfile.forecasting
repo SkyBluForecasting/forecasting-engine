@@ -10,6 +10,3 @@ CMD mlflow server \
     --default-artifact-root "$MLFLOW_ARTIFACT_ROOT" \
     --host 0.0.0.0 \
     --port 5050
-
-# forecasting Dockerfile (no CMD):
-# just run scripts explicitly in your container commands
