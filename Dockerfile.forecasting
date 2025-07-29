@@ -2,6 +2,8 @@ FROM forecasting-base:latest
 
 WORKDIR /app
 
+ENV PYTHONPATH=/app
+
 COPY forecasting_engine ./forecasting_engine
 
 # mlflow Dockerfile:
