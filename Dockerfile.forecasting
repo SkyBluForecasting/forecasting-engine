@@ -2,7 +2,11 @@ FROM forecasting-base:latest
 
 WORKDIR /app
 
+# Set python path so docker commands can run scripts
 ENV PYTHONPATH=/app
+
+# Prevent .pyc files from being written to your source directory:
+ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY forecasting_engine ./forecasting_engine
 
