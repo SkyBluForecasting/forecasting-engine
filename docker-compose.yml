@@ -4,21 +4,27 @@ services:
   mlflow:
     build:
       context: .
-      dockerfile: Dockerfile.mlflow
+      dockerfile: Dockerfile
     container_name: mlflow
     env_file:
       - .env
     ports:
-      - "5050:5050"  # maps container port 5050 to host port 5050
+      - "5050:5050"
+    command: >
+      mlflow server
+      --backend-store-uri "$MLFLOW_DB_URI"
+      --default-artifact-root "$MLFLOW_ARTIFACT_ROOT"
+      --host 0.0.0.0
+      --port 5050
 
   forecasting:
     build:
       context: .
-      dockerfile: Dockerfile.forecasting
+      dockerfile: Dockerfile
     container_name: forecasting-tasks
     env_file:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
-    command: tail -f /dev/null  # Keeps container running so you can exec into it
+    command: tail -f /dev/null

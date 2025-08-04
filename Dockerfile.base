@@ -1,7 +1,13 @@
-FROM python:3.11-slim
+FROM forecasting-base:latest
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Shared env vars for Python behavior
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy source
+COPY forecasting_engine ./forecasting_engine
+
+# Port is only relevant for mlflow server
+EXPOSE 5050
