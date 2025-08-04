@@ -49,7 +49,13 @@ pip install -r requirements.txt
 pip install -r test-requirements.txt
 ```
 
-4. If you want to run some of the code locally which integrates with S3 and the MLFLOW server - create a `.env` file in the root directory with your AWS IAM and MLFLOW configs. Replace the placeholders with actual values. 
+4. Install the package in editable mode (so imports work if running things locally)
+
+```bash
+pip install -e .
+```
+
+5. If you want to run some of the code locally which integrates with S3 and the MLFLOW server - create a `.env` file in the root directory with your AWS IAM and MLFLOW configs. Replace the placeholders with actual values. 
 
 ```bash
 # AWS Configuration
@@ -59,19 +65,20 @@ AWS_DEFAULT_REGION=us-east-2
 S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
 
 # MLFLOW Config
-MLFLOW_TRACKING_URI=MLFLOW_TRACKING_URI=http://<your-ec2-public-ip>:5050
+MLFLOW_TRACKING_URI=http://127.0.0.1:5050  # Localhost
 MLFLOW_DB_URI=get_from_supabase_session_pooler
 MLFLOW_ARTIFACT_ROOT=path-to-mlflow-s3-artifacts-folder
 ```
 
-## Starting the mlflow server locally:
+You may need to run `source .env` in order to set the variables in your virtual environment.
+
+### Starting the mlflow server locally:
 
 ```bash
 mlflow server --backend-store-uri $MLFLOW_DB_URI --default-artifact-root $MLFLOW_ARTIFACT_ROOT --host 127.0.0.1 --port 5050
 ```
 
 Open your browser to `http://localhost:5050` to access MLFLow. 
-
 
 ## Docker Setup
 

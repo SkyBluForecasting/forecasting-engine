@@ -27,8 +27,8 @@ def get_s3_client():
 
 def extract_asset_id_from_s3_key(s3_key: str) -> str:
     filename = os.path.basename(s3_key)  # e.g. "L9M_train.csv" or "L9M.csv"
-    name_part = filename.split("_")[0]  # Take before first underscore if present
-    asset_id = os.path.splitext(name_part)[0]  # Remove file extension
+    filename_no_ext = os.path.splitext(filename)[0]  # Remove file extension first
+    asset_id = filename_no_ext.split("_")[0]  # Then split on underscore
     return asset_id
 
 

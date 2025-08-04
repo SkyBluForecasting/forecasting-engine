@@ -8,6 +8,7 @@ from forecasting_engine.orchestration.s3_utils import (
     load_training_pd_from_s3,
     get_s3_bucket,
     get_s3_client,
+    extract_asset_id_from_s3_key,
 )
 
 # ---------------------------
@@ -58,11 +59,6 @@ def test_get_s3_client_returns_s3_client():
     client = get_s3_client()
     # Check it’s a boto3 client instance (simple check)
     assert client.meta.service_model.service_name == "s3"
-
-
-# ---------------------------
-# Test: find_matching_key
-# ---------------------------
 
 
 class TestFindMatchingKey:
@@ -117,11 +113,6 @@ class TestFindMatchingKey:
             assert "Multiple files found" in mock_warning.call_args[0][0]
 
         assert result == "training/12345_train.csv"
-
-
-# ---------------------------
-# Test: load_training_csv_from_s3
-# ---------------------------
 
 
 class TestLoadCsvFromS3:
@@ -197,11 +188,6 @@ class TestLoadCsvFromS3:
             load_training_csv_from_s3("training/empty.csv")
 
 
-# ---------------------------
-# Test: load_training_pd_from_s3
-# ---------------------------
-
-
 class TestLoadTrainingPdFromS3:
 
     @patch("forecasting_engine.orchestration.s3_utils.find_matching_key")
@@ -222,3 +208,22 @@ class TestLoadTrainingPdFromS3:
 
         df = load_training_pd_from_s3("12345")
         assert df.shape[0] == 2
+
+
+class TestExtractAssetIdFromS3Key:
+    @pytest.mark.parametrize(
+        "s3_key, expected_asset_id",
+        [
+            ("path/to/L9M_train.csv", "L9M"),
+            ("L9M_train.csv", "L9M"),
+            ("folder/L9M.csv", "L9M"),
+            ("L9M.csv", "L9M"),
+            ("some/dir/ABC_123_test.txt", "ABC"),
+            ("justfilename", "justfilename"),
+            ("another/path/XYZ_abc.csv", "XYZ"),
+            ("file.with.dots_in_name.csv", "file.with.dots"),
+        ],
+    )
+    def test_extract_asset_id(self, s3_key, expected_asset_id):
+        result = extract_asset_id_from_s3_key(s3_key)
+        assert result == expected_asset_id
