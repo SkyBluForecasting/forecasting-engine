@@ -1,6 +1,7 @@
 import pytest
+import sys
 from unittest.mock import patch
-from forecasting_engine.tasks.run_single_forecast import run_asset_forecast
+from forecasting_engine.tasks.run_single_forecast import run_asset_forecast, main
 
 
 @pytest.fixture
@@ -30,3 +31,22 @@ def test_run_asset_forecast_cases(
         assert expected_msg in result["message"]
     else:
         assert result["message"] is None
+
+
+def test_main_runs_forecast_and_exits(monkeypatch):
+    # Simulate CLI arguments: script name + asset_id
+    monkeypatch.setattr(sys, "argv", ["progname", "ASSET123"])
+
+    # Patch run_asset_forecast to return 0 without doing real work
+    with patch(
+        "forecasting_engine.tasks.run_single_forecast.run_asset_forecast",
+        return_value=0,
+    ) as mock_run:
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+
+        # sys.exit should be called with the return value from run_asset_forecast
+        assert excinfo.value.code == 0
+
+        # run_asset_forecast should be called once with the asset ID
+        mock_run.assert_called_once_with("ASSET123")

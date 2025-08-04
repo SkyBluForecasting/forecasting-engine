@@ -13,15 +13,9 @@ from forecasting_engine.orchestration.s3_utils import (
 
 from forecasting_engine.orchestration.logger_factory import get_logger
 
-from dotenv import load_dotenv
-import os
+from forecasting_engine.config import MLFLOW_TRACKING_URI
 
 logger = get_logger(__name__)
-
-# Load environment variables
-load_dotenv()
-
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
 
 
 def generate_forecast_for_asset(asset_id: str):

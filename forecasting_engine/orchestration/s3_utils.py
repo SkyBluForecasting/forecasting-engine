@@ -25,6 +25,13 @@ def get_s3_client():
     return boto3.client("s3")
 
 
+def extract_asset_id_from_s3_key(s3_key: str) -> str:
+    filename = os.path.basename(s3_key)  # e.g. "L9M_train.csv" or "L9M.csv"
+    filename_no_ext = os.path.splitext(filename)[0]  # Remove file extension first
+    asset_id = filename_no_ext.split("_")[0]  # Then split on underscore
+    return asset_id
+
+
 def find_matching_key(asset_id: str, prefix: str) -> str:
     """
     Searches S3 for a key that contains the asset_id in the file name under the given prefix.
