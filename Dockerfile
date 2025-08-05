@@ -1,0 +1,26 @@
+# Use an official Python runtime as a parent image
+FROM python:3.11-slim
+
+# Set working directory inside container
+WORKDIR /app
+
+# Prevent Python from writing .pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app
+
+# Install system dependencies if any (example: build-essential, git, etc.)
+RUN apt-get update && apt-get install -y build-essential
+
+# Copy your forecasting engine code into the container
+COPY forecasting_engine ./forecasting_engine
+
+# Install Python dependencies if you have requirements.txt
+COPY requirements.txt .
+ENV PIP_DEFAULT_TIMEOUT=120
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+# Expose port 5050 (used by mlflow server)
+EXPOSE 5050
+
+# Default command (can be overridden in docker-compose)
+CMD ["tail", "-f", "/dev/null"]

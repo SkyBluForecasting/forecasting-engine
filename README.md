@@ -77,14 +77,6 @@ Open your browser to `http://localhost:5050` to access MLFLow.
 
 This project includes Docker configurations for containerized deployment and development. There are three Dockerfiles and a docker-compose setup:
 
-### Dockerfiles
-
-- **`Dockerfile.base`**: Base image with Python 3.11 and dependencies installed
-- **`Dockerfile.mlflow`**: MLflow server container for model tracking and artifact storage
-- **`Dockerfile.forecasting`**: Forecasting engine container for running prediction tasks
-
-### Using Docker Compose (Recommended)
-
 The easiest way to run the entire system is using docker-compose:
 
 1. **Build and start all services:**
@@ -105,7 +97,7 @@ docker-compose down
 4. **View logs:**
 ```bash
 docker-compose logs -f mlflow
-docker-compose logs -f forecasting
+docker-compose logs -f training-poller
 ```
 
 ### Accessing Services

@@ -17,7 +17,7 @@ services:
       --host 0.0.0.0
       --port 5050
 
-  forecasting:
+  forecasting:  # Just a dev container
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,4 +27,17 @@ services:
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
-    command: tail -f /dev/null
+    command: tail -f /dev/null  
+
+
+  training-poller:  # Polls the SQS queue for new training jobs
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: training-poller
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+    working_dir: /app
+    command: python -m forecasting_engine.tasks.poll_training_queue
