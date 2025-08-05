@@ -1,10 +1,13 @@
 version: '3.8'
 
 services:
-  mlflow:
+  base:
     build:
       context: .
       dockerfile: Dockerfile
+    image: forecasting-base:latest
+  mlflow:
+    image: forecasting-base:latest
     container_name: mlflow
     env_file:
       - .env
@@ -18,9 +21,7 @@ services:
       --port 5050
 
   forecasting:  # Just a dev container
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: forecasting-base:latest
     container_name: forecasting-tasks
     env_file:
       - .env
@@ -31,9 +32,7 @@ services:
 
 
   training-poller:  # Polls the SQS queue for new training jobs
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: forecasting-base:latest
     container_name: training-poller
     env_file:
       - .env
