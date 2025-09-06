@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 from typing import List, Dict, Any, Optional
 
 from forecasting_engine.openstef.pipeline.train_model import train_model_pipeline
@@ -26,14 +27,34 @@ FORECAST_TYPE = "demand"
 LAT = 52.0  # dummy location defaults
 LON = 5.0
 
-# ====================================================================
+
+def split_train_test(df: pd.DataFrame, horizon_min: int, res_min: int, fsa_id: str):
+    """
+    Splits a DataFrame into training data by removing the last N rows for testing.
+
+    Args:
+        df: Full training DataFrame.
+        horizon_min: Forecast horizon in minutes.
+        res_min: Data resolution in minutes.
+        fsa_id: Asset ID (used for error messages).
+
+    Returns:
+        train_data: DataFrame containing rows for training.
+    """
+    test_len = int(horizon_min // res_min)
+    if len(df) <= test_len:
+        raise ValueError(
+            f"{fsa_id}: not enough rows ({len(df)}) for test window ({test_len})"
+        )
+    train_data = df.iloc[:-test_len, :]
+    return train_data
 
 
-def _build_pj(fsa_id: str, model_id: Optional[str] = None) -> PredictionJobDataClass:
+def build_pj(fsa_id: str, model_id: Optional[str] = None) -> PredictionJobDataClass:
     """
     Build a PredictionJob similar to your notebook setup.
     """
-    pj_dict = dict(
+    return PredictionJobDataClass(
         id=(model_id or fsa_id),
         model=MODEL_NAME,
         quantiles=QUANTILES,
@@ -48,10 +69,10 @@ def _build_pj(fsa_id: str, model_id: Optional[str] = None) -> PredictionJobDataC
         default_modelspecs=None,
         save_train_forecasts=True,  # match your notebook
     )
-    return PredictionJobDataClass(**pj_dict)
 
 
 def train_single_fsa(fsa_id: str):
+    """Train a model for a single FSA using an OpenSTEF pipeline"""
 
     try:
         df = load_training_pd_from_s3(asset_id=fsa_id)
@@ -67,20 +88,15 @@ def train_single_fsa(fsa_id: str):
         )
         raise
 
-    # Split last N samples for test (same idea as your notebook: ~8 days for 60-min data)
-    test_len = int((HORIZON_MIN // RES_MIN) * 1)  # same horizon length for test window
-    if len(df) <= test_len:
-        raise ValueError(
-            f"{fsa_id}: not enough rows ({len(df)}) for test window ({test_len})."
-        )
+    train_data = split_train_test(
+        df=df, horizon_min=HORIZON_MIN, res_min=RES_MIN, fsa_id=fsa_id
+    )
 
-    train_data = df.iloc[:-test_len, :]
-
-    pj = _build_pj(fsa_id)
+    pj = build_pj(fsa_id)
 
     # Kick off OpenSTEF training with MLflow logging
     try:
-        train_dataset, validation_dataset, test_dataset = train_model_pipeline(
+        train_model_pipeline(
             pj,
             train_data,
             check_old_model_age=False,
@@ -106,7 +122,7 @@ def train_all():
     return results
 
 
-def main():
+def main():  # pragma: no cover
     ap = argparse.ArgumentParser(
         description="Train OpenSTEF models on EC2 using S3 training data + MLflow."
     )
@@ -122,5 +138,5 @@ def main():
         train_all()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
