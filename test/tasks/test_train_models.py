@@ -105,7 +105,7 @@ class TestTrainSingleFSA:
 class TestTrainAll:
 
     @patch("forecasting_engine.tasks.Train_models.train_single_fsa")
-    @patch("forecasting_engine.tasks.Train_models.list_training_csv_keys")
+    @patch("forecasting_engine.tasks.Train_models.list_training_fsa_ids")
     def test_train_all_calls_all_keys(self, mock_list_keys, mock_train_single):
         mock_list_keys.return_value = ["A", "B"]
         mock_train_single.return_value = None
