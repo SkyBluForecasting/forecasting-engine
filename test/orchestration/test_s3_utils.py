@@ -9,7 +9,7 @@ from forecasting_engine.orchestration.s3_utils import (
     get_s3_bucket,
     get_s3_client,
     extract_asset_id_from_s3_key,
-    list_training_csv_keys,
+    list_training_fsa_ids,
 )
 
 # ---------------------------
@@ -245,12 +245,12 @@ class TestListTrainingCSVKeys:
         ]
         mock_s3_client.get_paginator.return_value = paginator
 
-        keys = list_training_csv_keys()
+        keys = list_training_fsa_ids()
         # Keys should be sorted alphabetically
         assert keys == [
-            "training/ABC_train.csv",
-            "training/K0A_train.csv",
-            "training/XYZ_train.csv",
+            "ABC",
+            "K0A",
+            "XYZ",
         ]
         mock_s3_client.get_paginator.assert_called_once_with("list_objects_v2")
 
@@ -267,15 +267,13 @@ class TestListTrainingCSVKeys:
         ]
         mock_s3_client.get_paginator.return_value = paginator
 
-        keys = list_training_csv_keys()
-        assert keys == ["training/K0A_train.csv"]  # only *_train.csv kept
+        keys = list_training_fsa_ids()
+        assert keys == ["K0A"]  # only *_train.csv kept
 
     def test_empty_bucket_returns_empty_list(self, mock_bucket, mock_s3_client):
         paginator = MagicMock()
         paginator.paginate.return_value = [{"Contents": []}]
         mock_s3_client.get_paginator.return_value = paginator
 
-        from forecasting_engine.orchestration.s3_utils import list_training_csv_keys
-
-        keys = list_training_csv_keys()
+        keys = list_training_fsa_ids()
         assert keys == []

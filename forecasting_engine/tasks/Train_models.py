@@ -11,7 +11,7 @@ from forecasting_engine.orchestration.logger_factory import get_logger
 
 from forecasting_engine.orchestration.s3_utils import (
     load_training_pd_from_s3,
-    list_training_csv_keys,
+    list_training_fsa_ids,
 )
 
 from forecasting_engine.config import MLFLOW_TRACKING_URI, MLFLOW_ARTIFACT_ROOT
@@ -114,7 +114,7 @@ def train_single_fsa(fsa_id: str):
 
 
 def train_all():
-    keys = list_training_csv_keys()
+    keys = list_training_fsa_ids()
     results: List[Dict[str, Any]] = []
     for i, key in enumerate(keys, start=1):
         logger.info(f"[{i}/{len(keys)}] Training {key} ...", flush=True)

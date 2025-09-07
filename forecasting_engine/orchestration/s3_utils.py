@@ -175,19 +175,19 @@ def save_forecast_csv_to_s3(df: pd.DataFrame, asset_id: str) -> None:
     logger.info("Forecast CSV successfully saved to S3.")
 
 
-def list_training_csv_keys() -> List[str]:
-
+def list_training_fsa_ids() -> List[str]:
     S3_BUCKET = get_s3_bucket()
     S3_CLIENT = get_s3_client()
 
-    """List keys like <FSA>_train.csv under S3 prefix."""
+    """List FSA IDs under S3 prefix."""
     paginator = S3_CLIENT.get_paginator("list_objects_v2")
-    keys: List[str] = []
-    pat = re.compile(r".+_train\.csv$", re.IGNORECASE)
+    fsa_ids: List[str] = []
+    pat = re.compile(r"(.+)_train\.csv$", re.IGNORECASE)  # capture FSA ID part
     for page in paginator.paginate(Bucket=S3_BUCKET, Prefix=TRAINING_PREFIX):
         for obj in page.get("Contents", []):
-            k = obj["Key"]
-            if pat.match(os.path.basename(k)):
-                keys.append(k)
-    keys.sort()
-    return keys
+            filename = os.path.basename(obj["Key"])
+            match = pat.match(filename)
+            if match:
+                fsa_ids.append(match.group(1))  # just the FSA ID
+    fsa_ids.sort()
+    return fsa_ids
