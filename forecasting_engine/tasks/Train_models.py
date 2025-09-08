@@ -14,7 +14,7 @@ from forecasting_engine.orchestration.s3_utils import (
     list_training_fsa_ids,
 )
 
-from forecasting_engine.config import MLFLOW_TRACKING_URI, MLFLOW_ARTIFACT_ROOT
+from forecasting_engine.config import MLFLOW_TRACKING_URI
 
 logger = get_logger(__name__)
 
@@ -101,7 +101,7 @@ def train_single_fsa(fsa_id: str):
             train_data,
             check_old_model_age=False,
             mlflow_tracking_uri=MLFLOW_TRACKING_URI,
-            artifact_folder=MLFLOW_ARTIFACT_ROOT,  # MLflow "artifact location" (root for this run's artifacts)
+            artifact_folder=None,  # Don't need to save write artifacts to disk, since they will already go to mlflow
         )
 
     except LookupError as e:
