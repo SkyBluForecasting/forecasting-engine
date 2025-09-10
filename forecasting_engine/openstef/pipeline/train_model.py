@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2017-2023 Contributors to the OpenSTEF project <korte.termijn.prognoses@alliander.com> # noqa E501>
 #
 # SPDX-License-Identifier: MPL-2.0
+
 import os
 from typing import Optional, Tuple, Union
 
@@ -143,6 +144,7 @@ def train_model_pipeline(
         model_specs=model_specs_updated,
         report=report,
     )
+
     if artifact_folder:
         report_folder = os.path.join(artifact_folder, str(pj["id"]))
         Reporter.write_report_to_disk(report=report, report_folder=report_folder)

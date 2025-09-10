@@ -2,8 +2,10 @@
 
 import os
 import boto3
+import re
 import pandas as pd
 from forecasting_engine.orchestration.logger_factory import get_logger
+from typing import List
 from io import StringIO
 from dotenv import load_dotenv
 from pandas.errors import EmptyDataError
@@ -12,6 +14,8 @@ logger = get_logger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+TRAINING_PREFIX = "training/"
 
 
 def get_s3_bucket():
@@ -98,6 +102,7 @@ def load_training_csv_from_s3(key: str) -> pd.DataFrame:
         raise ValueError(f"CSV at {S3_BUCKET}/{key} is empty")
 
     df.columns = df.columns.str.strip()
+
     # Check for required columns
     if "datetime" not in df.columns:
         raise ValueError(f"CSV at {S3_BUCKET}/{key} must contain a 'datetime' column.")
@@ -107,6 +112,9 @@ def load_training_csv_from_s3(key: str) -> pd.DataFrame:
     df["datetime"] = pd.to_datetime(df["datetime"], utc=True)
     df.set_index("datetime", inplace=True)
     df = df[~df.index.duplicated(keep="first")]
+
+    # Drop any non-numeric leftover columns (like FSA IDs)
+    df = df.select_dtypes(include=["number", "bool"])
 
     # Ensure 'load' is the first column
     cols = ["load"] + [c for c in df.columns if c != "load"]
@@ -165,3 +173,21 @@ def save_forecast_csv_to_s3(df: pd.DataFrame, asset_id: str) -> None:
     logger.info(f"Saving forecast to S3: {S3_BUCKET}/{key}")
     s3_client.put_object(Bucket=S3_BUCKET, Key=key, Body=csv_buffer.getvalue())
     logger.info("Forecast CSV successfully saved to S3.")
+
+
+def list_training_fsa_ids() -> List[str]:
+    S3_BUCKET = get_s3_bucket()
+    S3_CLIENT = get_s3_client()
+
+    """List FSA IDs under S3 prefix."""
+    paginator = S3_CLIENT.get_paginator("list_objects_v2")
+    fsa_ids: List[str] = []
+    pat = re.compile(r"(.+)_train\.csv$", re.IGNORECASE)  # capture FSA ID part
+    for page in paginator.paginate(Bucket=S3_BUCKET, Prefix=TRAINING_PREFIX):
+        for obj in page.get("Contents", []):
+            filename = os.path.basename(obj["Key"])
+            match = pat.match(filename)
+            if match:
+                fsa_ids.append(match.group(1))  # just the FSA ID
+    fsa_ids.sort()
+    return fsa_ids
