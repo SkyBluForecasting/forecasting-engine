@@ -17,6 +17,20 @@ from forecasting_engine.config import MLFLOW_TRACKING_URI
 logger = get_logger(__name__)
 
 
+def cleanup_temp_folder(path: Path):
+    """Safely remove a temp folder if it exists."""
+    if path.exists():
+        try:
+            shutil.rmtree(path)
+        except Exception as e:
+            logger.warning(f"Failed to fully clean up temp folder {path}: {e}")
+        else:
+            if path.exists():
+                logger.warning(f"Failed to fully clean up temp folder {path}")
+            else:
+                logger.info(f"Cleaned up temp folder {path}")
+
+
 def generate_forecast_for_asset(asset_id: str):
     """
     Loads the latest model for an asset and generates a forecast using OpenSTEF.
@@ -75,10 +89,4 @@ def generate_forecast_for_asset(asset_id: str):
         raise
 
     finally:
-        # Clean up temp folder for this asset
-        if tmp_path.exists():
-            try:
-                shutil.rmtree(tmp_path)
-                logger.info(f"Cleaned up temp folder for asset {asset_id}")
-            except Exception as e:
-                logger.warning(f"Failed to clean up temp folder {tmp_path}: {e}")
+        cleanup_temp_folder(tmp_path)

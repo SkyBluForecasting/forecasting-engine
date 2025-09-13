@@ -2,7 +2,7 @@
 set -euxo pipefail
 cd ~/forecasting-engine
 
-
+# Create host temp directory for training-poller
 HOST_TEMP_DIR="$HOME/training-temp"
 mkdir -p "$HOST_TEMP_DIR"
 echo "📁 Created host temp directory at $HOST_TEMP_DIR"
