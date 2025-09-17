@@ -1,5 +1,4 @@
-import shutil
-from pathlib import Path
+"""Pulls latest model from MLFlow, Pulls training data from S3, Calls openstef logic to generate forecasts, Pushes forecasts to S3"""
 
 from forecasting_engine.openstef.pipeline.create_forecast import (
     create_forecast_pipeline,
@@ -11,33 +10,30 @@ from forecasting_engine.orchestration.s3_utils import (
     load_training_pd_from_s3,
     save_forecast_csv_to_s3,
 )
+
 from forecasting_engine.orchestration.logger_factory import get_logger
+
 from forecasting_engine.config import MLFLOW_TRACKING_URI
 
 logger = get_logger(__name__)
 
 
-def cleanup_temp_folder(path: Path):
-    """Safely remove a temp folder if it exists."""
-    if path.exists():
-        try:
-            shutil.rmtree(path)
-        except Exception as e:
-            logger.warning(f"Failed to fully clean up temp folder {path}: {e}")
-        else:
-            if path.exists():
-                logger.warning(f"Failed to fully clean up temp folder {path}")
-            else:
-                logger.info(f"Cleaned up temp folder {path}")
-
-
 def generate_forecast_for_asset(asset_id: str):
     """
     Loads the latest model for an asset and generates a forecast using OpenSTEF.
-    Automatically cleans up the temp folder for the asset after forecast.
-    """
-    tmp_path = Path("/app/tmp") / asset_id
 
+    Args:
+        asset_id (str): Asset ID whose forecast is to be generated.
+
+    Returns:
+        pd.DataFrame: Forecast dataframe with predicted values.
+
+    Raises:
+        ValueError: If training data is malformed.
+        FileNotFoundError: If training data is missing.
+        LookupError: If no model is found in MLflow for the prediction job.
+        Exception: For any other unforeseen failure during the forecast pipeline.
+    """
     logger.info(f"Starting forecast generation for asset: {asset_id}")
 
     try:
@@ -55,6 +51,8 @@ def generate_forecast_for_asset(asset_id: str):
         raise
 
     try:
+
+        # Eventually pj will likely be an input. Hardcode for now.
         pj = PredictionJobDataClass(
             id=asset_id,
             model="xgb",
@@ -62,8 +60,8 @@ def generate_forecast_for_asset(asset_id: str):
             forecast_type="demand",
             lat=52.0,
             lon=5.0,
-            horizon_minutes=48 * 60,
-            resolution_minutes=60,
+            horizon_minutes=48 * 60,  # 48 hour forecast
+            resolution_minutes=60,  # hourly steps
             name=asset_id,
             hyper_params={},
             feature_names=None,
@@ -77,10 +75,6 @@ def generate_forecast_for_asset(asset_id: str):
             mlflow_tracking_uri=MLFLOW_TRACKING_URI,
         )
 
-        save_forecast_csv_to_s3(df=forecast, asset_id=asset_id)
-        logger.info(f"Forecast generation successful for asset: {asset_id}")
-        return forecast
-
     except LookupError as e:
         logger.error(f"No model found in MLflow for asset {asset_id}: {e}")
         raise
@@ -88,5 +82,8 @@ def generate_forecast_for_asset(asset_id: str):
         logger.exception(f"Forecast pipeline failed for asset {asset_id}: {e}")
         raise
 
-    finally:
-        cleanup_temp_folder(tmp_path)
+    logger.info(f"Forecast generation successful for asset: {asset_id}")
+
+    save_forecast_csv_to_s3(df=forecast, asset_id=asset_id)
+
+    return forecast

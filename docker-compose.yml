@@ -39,8 +39,5 @@ services:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
-      - ~/training-temp:/app/tmp
     working_dir: /app
-    environment:
-      - TMPDIR=/app/tmp
     command: python -m forecasting_engine.tasks.poll_training_queue
