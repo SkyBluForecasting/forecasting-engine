@@ -1,6 +1,3 @@
-import shutil
-from pathlib import Path
-
 from forecasting_engine.openstef.pipeline.create_forecast import (
     create_forecast_pipeline,
 )
@@ -17,26 +14,11 @@ from forecasting_engine.config import MLFLOW_TRACKING_URI
 logger = get_logger(__name__)
 
 
-def cleanup_temp_folder(path: Path):
-    """Safely remove a temp folder if it exists."""
-    if path.exists():
-        try:
-            shutil.rmtree(path)
-        except Exception as e:
-            logger.warning(f"Failed to fully clean up temp folder {path}: {e}")
-        else:
-            if path.exists():
-                logger.warning(f"Failed to fully clean up temp folder {path}")
-            else:
-                logger.info(f"Cleaned up temp folder {path}")
-
-
 def generate_forecast_for_asset(asset_id: str):
     """
     Loads the latest model for an asset and generates a forecast using OpenSTEF.
     Automatically cleans up the temp folder for the asset after forecast.
     """
-    tmp_path = Path("/app/tmp") / asset_id
 
     logger.info(f"Starting forecast generation for asset: {asset_id}")
 
@@ -77,10 +59,6 @@ def generate_forecast_for_asset(asset_id: str):
             mlflow_tracking_uri=MLFLOW_TRACKING_URI,
         )
 
-        save_forecast_csv_to_s3(df=forecast, asset_id=asset_id)
-        logger.info(f"Forecast generation successful for asset: {asset_id}")
-        return forecast
-
     except LookupError as e:
         logger.error(f"No model found in MLflow for asset {asset_id}: {e}")
         raise
@@ -88,5 +66,6 @@ def generate_forecast_for_asset(asset_id: str):
         logger.exception(f"Forecast pipeline failed for asset {asset_id}: {e}")
         raise
 
-    finally:
-        cleanup_temp_folder(tmp_path)
+    save_forecast_csv_to_s3(df=forecast, asset_id=asset_id)
+    logger.info(f"Forecast generation successful for asset: {asset_id}")
+    return forecast
