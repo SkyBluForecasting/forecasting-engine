@@ -45,7 +45,6 @@ services:
     image: forecasting-base:latest
     container_name: cleanup
     volumes:
-      - /home/ubuntu/training-temp:/tmp/training
       - ./github/scripts/cleanup.sh:/usr/local/bin/cleanup.sh
     command: >
       sh -c "while true; do
