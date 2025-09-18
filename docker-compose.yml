@@ -31,7 +31,6 @@ services:
     working_dir: /app
     command: tail -f /dev/null  
 
-
   training-poller:  # Polls the SQS queue for new training jobs
     image: forecasting-base:latest
     container_name: training-poller
@@ -41,3 +40,15 @@ services:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
     command: python -m forecasting_engine.tasks.poll_training_queue
+
+  cleanup:  # Calls a cleanup script every hour to delete old temp files
+    image: forecasting-base:latest
+    container_name: cleanup
+    volumes:
+      - /home/ubuntu/training-temp:/tmp/training
+      - ./github/scripts/cleanup.sh:/usr/local/bin/cleanup.sh
+    command: >
+      sh -c "while true; do
+               /usr/local/bin/cleanup.sh
+               sleep 3600
+             done"
