@@ -44,8 +44,6 @@ services:
   cleanup:  # Calls a cleanup script every hour to delete old temp files
     image: forecasting-base:latest
     container_name: cleanup
-    volumes:
-      - ./github/scripts/cleanup.sh:/usr/local/bin/cleanup.sh
     command: >
       sh -c "while true; do
                /usr/local/bin/cleanup.sh

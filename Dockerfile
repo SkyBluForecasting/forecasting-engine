@@ -24,3 +24,7 @@ EXPOSE 5050
 
 # Default command (can be overridden in docker-compose)
 CMD ["tail", "-f", "/dev/null"]
+
+# Copy cleanup script into the image and make executable
+COPY .github/scripts/cleanup.sh /usr/local/bin/cleanup.sh
+RUN chmod +x /usr/local/bin/cleanup.sh
