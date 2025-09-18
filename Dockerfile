@@ -26,5 +26,5 @@ EXPOSE 5050
 CMD ["tail", "-f", "/dev/null"]
 
 # Copy cleanup script into the image and make executable
-COPY scripts/cleanup.sh /usr/local/bin/cleanup.sh
+COPY cleanup.sh /usr/local/bin/cleanup.sh
 RUN chmod +x /usr/local/bin/cleanup.sh
