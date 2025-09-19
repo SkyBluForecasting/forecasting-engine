@@ -41,11 +41,11 @@ services:
     working_dir: /app
     command: python -m forecasting_engine.tasks.poll_training_queue
 
-  cleanup:  # Calls a cleanup script every hour to delete old temp files
+  cleanup:  # Calls a cleanup script every day to delete old temp files
     image: forecasting-base:latest
     container_name: cleanup
     command: >
       sh -c "while true; do
                /usr/local/bin/cleanup.sh
-               sleep 3600
+               sleep 86400
              done"
