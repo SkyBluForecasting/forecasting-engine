@@ -7,22 +7,12 @@ import pandas as pd
 from forecasting_engine.orchestration.logger_factory import get_logger
 from typing import List
 from io import StringIO
-from dotenv import load_dotenv
+from forecasting_engine.config import S3_BUCKET
 from pandas.errors import EmptyDataError
 
 logger = get_logger(__name__)
 
-# Load environment variables
-load_dotenv()
-
 TRAINING_PREFIX = "training/"
-
-
-def get_s3_bucket():
-    bucket = os.getenv("S3_BUCKET")
-    if not bucket:
-        raise ValueError("S3_BUCKET environment variable is not set.")
-    return bucket
 
 
 def get_s3_client():
@@ -46,13 +36,12 @@ def find_matching_key(asset_id: str, prefix: str) -> str:
         ValueError: If S3 BUCKET environment variable is unset.
         FileNotFoundError: If no matching key is found.
     """
-    bucket = get_s3_bucket()
     s3_client = get_s3_client()
 
     paginator = s3_client.get_paginator("list_objects_v2")
     matches = []
 
-    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+    for page in paginator.paginate(Bucket=S3_BUCKET, Prefix=prefix):
         for obj in page.get("Contents", []):
             key = obj["Key"]
             if asset_id in key and key.endswith(".csv"):
@@ -60,7 +49,7 @@ def find_matching_key(asset_id: str, prefix: str) -> str:
 
     if not matches:
         raise FileNotFoundError(
-            f"No CSV file containing '{asset_id}' found under '{prefix}' in bucket {bucket}"
+            f"No CSV file containing '{asset_id}' found under '{prefix}' in bucket {S3_BUCKET}"
         )
 
     if len(matches) > 1:
@@ -89,7 +78,6 @@ def load_training_csv_from_s3(key: str) -> pd.DataFrame:
 
     """
 
-    S3_BUCKET = get_s3_bucket()
     s3_client = get_s3_client()
 
     logger.info(f"Loading from S3: {S3_BUCKET}/{key}")
@@ -157,7 +145,6 @@ def save_forecast_csv_to_s3(df: pd.DataFrame, asset_id: str) -> None:
         ValueError: If S3_BUCKET is not set.
     """
 
-    S3_BUCKET = get_s3_bucket()
     s3_client = get_s3_client()
 
     # Format start and end timestamps as YYYYMMDDTHHMM
@@ -176,7 +163,6 @@ def save_forecast_csv_to_s3(df: pd.DataFrame, asset_id: str) -> None:
 
 
 def list_training_fsa_ids() -> List[str]:
-    S3_BUCKET = get_s3_bucket()
     S3_CLIENT = get_s3_client()
 
     """List FSA IDs under S3 prefix."""
