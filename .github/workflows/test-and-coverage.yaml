@@ -26,12 +26,37 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Login to AWS CodeArtifact
+      id: login
+      run: |
+        echo "${{ secrets.ENV_FILE_STAGING }}" > .env
+        set -a
+        source .env
+        set +a
+
+        # Make AWS vars available for next steps
+        echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+        echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV
+
+        TOKEN=$(aws codeartifact get-authorization-token \
+          --domain skyblu \
+          --domain-owner 591082451778 \
+          --region $AWS_REGION \
+          --query authorizationToken \
+          --output text)
+
+        echo "CODEARTIFACT_AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+    - name: Set DATABASE_URL for CI
+      run: echo "DATABASE_URL=sqlite+aiosqlite:///:memory:" >> $GITHUB_ENV
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -r requirements.txt
-        pip install -r test-requirements.txt
-        pip install flake8 coverage
+        python -m pip install --upgrade pip
+        pip install --index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/ \
+                    --extra-index-url https://pypi.org/simple \
+                    -r requirements.txt
 
     - name: Check formatting using black
       uses: rickstaa/action-black@v1
