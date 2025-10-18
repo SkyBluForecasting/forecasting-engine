@@ -73,7 +73,6 @@ jobs:
         pip install --no-cache-dir flake8 coverage
         pip install --no-cache-dir \
             --index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/ \
-            --extra-index-url https://pypi.org/simple \
             forecasting-db==1.2.4
         pip install --no-cache-dir -r requirements.txt
 
