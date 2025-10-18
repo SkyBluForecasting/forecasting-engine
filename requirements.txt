@@ -27,4 +27,4 @@ psycopg2-binary>=2.9,<3.0
 sqlalchemy
 
 # Internal Packages
-forecasting-db==1.2.0
+forecasting-db==1.2.4
