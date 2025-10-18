@@ -10,6 +10,21 @@ jobs:
   test:
     name: Test and Coverage
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: appdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
         python-version: [3.11]
@@ -49,7 +64,7 @@ jobs:
         echo "CODEARTIFACT_AUTH_TOKEN=$TOKEN" >> $GITHUB_ENV
 
     - name: Set DATABASE_URL for CI
-      run: echo "DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
+      run: echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/appdb" >> $GITHUB_ENV
 
     - name: Install dependencies
       run: |
@@ -62,7 +77,6 @@ jobs:
 
     - name: Check formatting using black
       uses: rickstaa/action-black@v1
-      id: action_black
       with:
         black_args: "."
 
