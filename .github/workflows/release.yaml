@@ -13,10 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensures tags can be pushed
 
-      - name: Set up Python (for sed and Python environment)
+      - name: Set up Python (for any scripts)
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
@@ -26,19 +28,15 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Check token permissions
-        run: gh auth status
+      - name: Create and push tag
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Create and push tag
         run: |
           git tag ${{ github.event.inputs.tag }}
-          git push https://${GH_PAT}@github.com/SkyBluForecasting/forecasting-engine.git ${{ github.event.inputs.tag }}
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} ${{ github.event.inputs.tag }}
 
       - name: Create GitHub release
-        run: gh release create "${{ github.event.inputs.tag }}" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh release create "${{ github.event.inputs.tag }}" --generate-notes
