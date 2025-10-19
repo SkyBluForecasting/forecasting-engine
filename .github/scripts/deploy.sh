@@ -2,6 +2,11 @@
 set -euxo pipefail
 cd ~/forecasting-engine
 
+# Load environment variables from .env
+set -a
+source .env
+set +a
+
 # Get CodeArtifact token
 TOKEN=$(aws codeartifact get-authorization-token \
   --domain skyblu \
