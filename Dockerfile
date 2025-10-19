@@ -22,9 +22,9 @@ COPY forecasting_engine ./forecasting_engine
 COPY requirements.txt .
 ENV PIP_DEFAULT_TIMEOUT=120
 RUN pip install --no-cache-dir --prefer-binary \
-    --index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/ \
-    --extra-index-url https://pypi.org/simple \
-    -r requirements.txt
+    -r requirements.txt \
+    --index-url https://pypi.org/simple \
+    --extra-index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/
 
 # Expose port 5050 (used by mlflow server)
 EXPOSE 5050
