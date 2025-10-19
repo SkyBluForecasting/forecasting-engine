@@ -14,6 +14,7 @@ TOKEN=$(aws codeartifact get-authorization-token \
   --region $AWS_REGION \
   --query authorizationToken \
   --output text)
+export CODEARTIFACT_AUTH_TOKEN=$TOKEN
 
 echo "🧹 Running docker system prune..."
 docker system prune -af || true
@@ -21,7 +22,7 @@ docker system prune -af || true
 echo "🐋 Building and starting containers with Docker Compose..."
 DOCKER_BUILDKIT=0 docker-compose down || true
 DOCKER_BUILDKIT=0 docker-compose build \
-  --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN" \
+  --build-arg CODEARTIFACT_AUTH_TOKEN="$TOKEN" \
   --build-arg AWS_REGION="$AWS_REGION"
 DOCKER_BUILDKIT=0 docker-compose up -d
 
