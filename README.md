@@ -61,13 +61,16 @@ pip install -e .
 # AWS Configuration
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_DEFAULT_REGION=us-east-2
+AWS_REGION=us-east-2
 S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
 
 # MLFLOW Config
 MLFLOW_TRACKING_URI=http://127.0.0.1:5050  # Localhost
 MLFLOW_DB_URI=get_from_supabase_session_pooler
 MLFLOW_ARTIFACT_ROOT=path-to-mlflow-s3-artifacts-folder
+
+# Database Configuration
+DATABASE_URL="postgresql://postgres:localpass@localhost:5432/appdb"
 ```
 
 You may need to run `source .env` in order to set the variables in your virtual environment.

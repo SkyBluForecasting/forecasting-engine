@@ -8,15 +8,20 @@ on:
         required: true
         default: 'v1.0.0'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensures tags can be pushed
 
-      - name: Set up Python (for sed and Python environment)
+      - name: Set up Python (for any scripts)
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
@@ -27,13 +32,14 @@ jobs:
           git config user.email "github-actions@github.com"
 
       - name: Create and push tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           git tag ${{ github.event.inputs.tag }}
-          git push origin ${{ github.event.inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} ${{ github.event.inputs.tag }}
 
       - name: Create GitHub release
-        run: gh release create "${{ github.event.inputs.tag }}" --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.event.inputs.tag }}" --generate-notes

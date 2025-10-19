@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch
-from forecasting_engine.tasks.Train_models import (
+from forecasting_engine.tasks.train_models import (
     split_train_test,
     build_pj,
     train_single_fsa,
@@ -41,8 +41,8 @@ class TestBuildPJ:
 
 class TestTrainSingleFSA:
 
-    @patch("forecasting_engine.tasks.Train_models.train_model_pipeline")
-    @patch("forecasting_engine.tasks.Train_models.load_training_pd_from_s3")
+    @patch("forecasting_engine.tasks.train_models.train_model_pipeline")
+    @patch("forecasting_engine.tasks.train_models.load_training_pd_from_s3")
     def test_success(self, mock_load, mock_train):
         df = pd.DataFrame({"a": range(200)})
         mock_load.return_value = df
@@ -53,9 +53,9 @@ class TestTrainSingleFSA:
         mock_load.assert_called_once_with(asset_id="TEST")
         mock_train.assert_called_once()
 
-    @patch("forecasting_engine.tasks.Train_models.train_model_pipeline")
+    @patch("forecasting_engine.tasks.train_models.train_model_pipeline")
     @patch(
-        "forecasting_engine.tasks.Train_models.load_training_pd_from_s3",
+        "forecasting_engine.tasks.train_models.load_training_pd_from_s3",
         side_effect=FileNotFoundError,
     )
     def test_file_not_found(self, mock_load, mock_train):
@@ -64,7 +64,7 @@ class TestTrainSingleFSA:
         mock_load.assert_called_once()
 
     @patch(
-        "forecasting_engine.tasks.Train_models.load_training_pd_from_s3",
+        "forecasting_engine.tasks.train_models.load_training_pd_from_s3",
         side_effect=ValueError("invalid data"),
     )
     def test_value_error_loading(self, mock_load):
@@ -72,10 +72,10 @@ class TestTrainSingleFSA:
             train_single_fsa("INVALID")
 
     @patch(
-        "forecasting_engine.tasks.Train_models.train_model_pipeline",
+        "forecasting_engine.tasks.train_models.train_model_pipeline",
         side_effect=LookupError("model missing"),
     )
-    @patch("forecasting_engine.tasks.Train_models.load_training_pd_from_s3")
+    @patch("forecasting_engine.tasks.train_models.load_training_pd_from_s3")
     def test_lookup_error_training(self, mock_load, mock_train):
         df = pd.DataFrame({"a": range(200)})
         mock_load.return_value = df
@@ -83,10 +83,10 @@ class TestTrainSingleFSA:
             train_single_fsa("TEST")
 
     @patch(
-        "forecasting_engine.tasks.Train_models.train_model_pipeline",
+        "forecasting_engine.tasks.train_models.train_model_pipeline",
         side_effect=Exception("training failed"),
     )
-    @patch("forecasting_engine.tasks.Train_models.load_training_pd_from_s3")
+    @patch("forecasting_engine.tasks.train_models.load_training_pd_from_s3")
     def test_other_exception_training(self, mock_load, mock_train):
         df = pd.DataFrame({"a": range(200)})
         mock_load.return_value = df
@@ -94,7 +94,7 @@ class TestTrainSingleFSA:
             train_single_fsa("TEST")
 
     @patch(
-        "forecasting_engine.tasks.Train_models.load_training_pd_from_s3",
+        "forecasting_engine.tasks.train_models.load_training_pd_from_s3",
         side_effect=Exception("other error"),
     )
     def test_other_exception_loading(self, mock_load):
@@ -104,8 +104,8 @@ class TestTrainSingleFSA:
 
 class TestTrainAll:
 
-    @patch("forecasting_engine.tasks.Train_models.train_single_fsa")
-    @patch("forecasting_engine.tasks.Train_models.list_training_fsa_ids")
+    @patch("forecasting_engine.tasks.train_models.train_single_fsa")
+    @patch("forecasting_engine.tasks.train_models.list_training_fsa_ids")
     def test_train_all_calls_all_keys(self, mock_list_keys, mock_train_single):
         mock_list_keys.return_value = ["A", "B"]
         mock_train_single.return_value = None

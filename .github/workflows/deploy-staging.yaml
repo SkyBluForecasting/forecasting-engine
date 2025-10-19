@@ -53,7 +53,7 @@ jobs:
                 set -euxo pipefail
                 cd ~/forecasting-engine
       
-                # Just run the deploy script (it now handles everything)
+                # Run the deploy script
                 chmod +x deploy.sh
                 DOCKER_BUILDKIT=0 ./deploy.sh
           EOF
