@@ -34,9 +34,9 @@ jobs:
       - name: Create and push tag
         run: |
           git tag ${{ github.event.inputs.tag }}
-          git push origin ${{ github.event.inputs.tag }}
+          git push https://${GH_PAT}@github.com/SkyBluForecasting/forecasting-engine.git ${{ github.event.inputs.tag }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
 
       - name: Create GitHub release
         run: gh release create "${{ github.event.inputs.tag }}" --generate-notes
