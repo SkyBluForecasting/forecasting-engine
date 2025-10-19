@@ -52,8 +52,11 @@ jobs:
               ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << 'EOF'
                 set -euxo pipefail
                 cd ~/forecasting-engine
+
+                # Export token needed to install internal packages
+                export CODEARTIFACT_AUTH_TOKEN="${{ secrets.CODEARTIFACT_AUTH_TOKEN }}"
       
-                # Just run the deploy script (it now handles everything)
+                # Run the deploy script
                 chmod +x deploy.sh
                 DOCKER_BUILDKIT=0 ./deploy.sh
           EOF
