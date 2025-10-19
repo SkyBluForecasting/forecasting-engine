@@ -17,14 +17,18 @@ RUN apt-get update && apt-get install -y build-essential curl
 
 # Copy your forecasting engine code into the container
 COPY forecasting_engine ./forecasting_engine
-
-# Install Python dependencies if you have requirements.txt
 COPY requirements.txt .
 ENV PIP_DEFAULT_TIMEOUT=120
-RUN pip install --no-cache-dir --prefer-binary \
-    -r requirements.txt \
-    --index-url https://pypi.org/simple \
-    --extra-index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/
+
+# Build wheels first and install deps
+RUN python -m pip install --upgrade pip wheel setuptools && \
+    mkdir -p /wheels && \
+    pip wheel -r requirements.txt -w /wheels \
+        --index-url https://aws:${CODEARTIFACT_AUTH_TOKEN}@skyblu-591082451778.d.codeartifact.${AWS_REGION}.amazonaws.com/pypi/forecasting-db/simple/ \
+        --extra-index-url https://pypi.org/simple
+
+# Install from wheels
+RUN pip install --no-cache-dir /wheels/*
 
 # Expose port 5050 (used by mlflow server)
 EXPOSE 5050
