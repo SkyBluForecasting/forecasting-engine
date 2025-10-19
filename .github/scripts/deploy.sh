@@ -2,12 +2,21 @@
 set -euxo pipefail
 cd ~/forecasting-engine
 
+# Get CodeArtifact token
+TOKEN=$(aws codeartifact get-authorization-token \
+  --domain skyblu \
+  --domain-owner 591082451778 \
+  --region $AWS_REGION \
+  --query authorizationToken \
+  --output text)
+
 echo "🧹 Running docker system prune..."
 docker system prune -af || true
 
 echo "🐋 Building and starting containers with Docker Compose..."
 DOCKER_BUILDKIT=0 docker-compose down || true
-DOCKER_BUILDKIT=0 docker-compose up -d --build
+DOCKER_BUILDKIT=0 docker-compose build --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN"
+DOCKER_BUILDKIT=0 docker-compose up -d
 
 echo "🕵️ Waiting for MLflow to become ready..."
 for i in $(seq 1 24); do
