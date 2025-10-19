@@ -3,6 +3,7 @@ FROM python:3.11-slim
 
 # Build arg for CodeArtifact token
 ARG CODEARTIFACT_AUTH_TOKEN
+ARG AWS_REGION
 
 # Set working directory inside container
 WORKDIR /app

@@ -20,7 +20,9 @@ docker system prune -af || true
 
 echo "🐋 Building and starting containers with Docker Compose..."
 DOCKER_BUILDKIT=0 docker-compose down || true
-DOCKER_BUILDKIT=0 docker-compose build --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN"
+DOCKER_BUILDKIT=0 docker-compose build \
+  --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN" \
+  --build-arg AWS_REGION="$AWS_REGION"
 DOCKER_BUILDKIT=0 docker-compose up -d
 
 echo "🕵️ Waiting for MLflow to become ready..."
