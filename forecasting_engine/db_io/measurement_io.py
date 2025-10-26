@@ -1,6 +1,8 @@
 from forecasting_db.models import Measurement
+from datetime import datetime
 from .base_io import BaseIO
 import pandas as pd
+from sqlalchemy import func, and_
 
 
 class MeasurementsIO(BaseIO):
@@ -96,3 +98,37 @@ class MeasurementsIO(BaseIO):
 
         except Exception as e:
             raise ValueError(f"Failed to resample data to frequency {freq}: {e}")
+
+    def get_latest_load_per_asset(
+        self, asset_uuids: list[str] = None
+    ) -> dict[str, tuple[datetime, float]]:
+        """
+        Return the latest load measurement per asset.
+        Returns dict: {asset_uuid: (timestamp, value)}
+        """
+        # Step 1: get latest timestamp per asset
+        subq = self.session.query(
+            Measurement.asset_uuid, func.max(Measurement.timestamp).label("latest_ts")
+        ).filter(Measurement.metric == "load")
+
+        if asset_uuids:
+            subq = subq.filter(Measurement.asset_uuid.in_(asset_uuids))
+
+        subq = subq.group_by(Measurement.asset_uuid).subquery()
+
+        # Step 2: join back to get the value
+        latest_rows = (
+            self.session.query(
+                Measurement.asset_uuid, Measurement.timestamp, Measurement.value
+            )
+            .join(
+                subq,
+                and_(
+                    Measurement.asset_uuid == subq.c.asset_uuid,
+                    Measurement.timestamp == subq.c.latest_ts,
+                ),
+            )
+            .all()
+        )
+
+        return {asset_uuid: (ts, val) for asset_uuid, ts, val in latest_rows}

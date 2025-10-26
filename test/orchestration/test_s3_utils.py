@@ -7,9 +7,7 @@ from forecasting_engine.orchestration.s3_utils import (
     load_training_csv_from_s3,
     load_training_pd_from_s3,
     get_s3_client,
-    extract_asset_id_from_s3_key,
     list_training_fsa_ids,
-    save_forecast_csv_to_s3,
 )
 
 # ---------------------------
@@ -44,29 +42,6 @@ def test_get_s3_client_returns_s3_client():
     client = get_s3_client()
     # Basic boto3 client sanity check
     assert client.meta.service_model.service_name == "s3"
-
-
-# ---------------------------
-# Tests: extract_asset_id_from_s3_key
-# ---------------------------
-
-
-@pytest.mark.parametrize(
-    "s3_key, expected",
-    [
-        ("path/to/L9M_train.csv", "L9M"),
-        ("L9M_train.csv", "L9M"),
-        ("folder/L9M.csv", "L9M"),
-        ("L9M.csv", "L9M"),
-        ("some/dir/ABC_123_test.txt", "ABC"),
-        ("justfilename", "justfilename"),
-        ("another/path/XYZ_abc.csv", "XYZ"),
-        ("file.with.dots_in_name.csv", "file.with.dots"),
-    ],
-)
-def test_extract_asset_id_from_s3_key(s3_key, expected):
-
-    assert extract_asset_id_from_s3_key(s3_key) == expected
 
 
 # ---------------------------
@@ -178,27 +153,6 @@ def test_load_training_pd_from_s3_success(mock_load_csv, mock_find_key):
     assert result.equals(df)
     mock_find_key.assert_called_once_with(asset_id="ABC", prefix="training/")
     mock_load_csv.assert_called_once_with("training/ABC_train.csv")
-
-
-# ---------------------------
-# Tests: save_forecast_csv_to_s3
-# ---------------------------
-
-
-def test_save_forecast_csv_to_s3_success(mock_s3_client):
-    df = pd.DataFrame(
-        {"load": [10, 20]},
-        index=pd.to_datetime(["2024-01-01 00:00", "2024-01-01 01:00"]),
-    )
-    with patch("forecasting_engine.orchestration.s3_utils.logger.info") as mock_info:
-        save_forecast_csv_to_s3(df, "ABC")
-
-    mock_s3_client.put_object.assert_called_once()
-    args, kwargs = mock_s3_client.put_object.call_args
-    assert kwargs["Bucket"] == "dummy-bucket"
-    assert kwargs["Key"].startswith("forecasts/ABC/")
-    assert "Body" in kwargs
-    mock_info.assert_any_call("Forecast CSV successfully saved to S3.")
 
 
 # ---------------------------

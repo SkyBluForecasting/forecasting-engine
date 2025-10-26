@@ -1,12 +1,6 @@
 # Forecasting Engine
 
-The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS S3, MLFlow, and a PostgreSQL database (for storing ML artifacts):
-
-- OpenStef forecasting logic: Core model training and forecasting powered by OpenSTEF.
-- MLflow: Tracks and stores trained forecasting models and metadata in a PostgreSQL-backed MLflow server. Artifacts (trained model files) are stored on AWS S3.
-- AWS S3: Used as the central artifact store for models and forecast output data.
-- PostgreSQL database: Stores MLflow metadata such as experiment and run info.
-- Orchestration components: Custom code to trigger forecasts, retrieve data from S3, handle message queues (SQS), and coordinate pipeline execution.
+The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS SQS Queue, MLFlow, and a PostgreSQL database.
 
 This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
 
@@ -15,11 +9,23 @@ This repo is designed to be deployed on an EC2 instance and serves as the backen
 ```
 forecasting_engine/ **Included in deployments
 ├── openstef/ # Core licensed forecasting logic 
-├── orchestration/ # Custom logic to run forecasts, load from S3, poll SQS. 
+├── orchestration/ # Custom logic to run forecasts, load and push DB data, poll SQS. 
 ├── tasks/ # Executable scripts (polling, cron, CLI entrypoints) 
 scripts/ # Test scripts for local testing ** NOT included in deployments
 test/ # Unit tests  ** NOT included in deployments
 ```
+
+### Key Tasks
+
+The `forecasting_engine/tasks/` directory contains the main executable scripts that orchestrate the forecasting pipeline:
+
+- **`forecast_request_producer.py`** (Enqueuer): Periodically checks the database for assets with new measurements and enqueues forecast requests to SQS. Runs every 30 minutes by default to identify which assets need new forecasts.
+
+- **`poll_forecast_request_queue.py`** (Poller): Continuously polls the SQS queue for forecast requests and processes them by calling the forecast generation pipeline. Handles message batching and error recovery.
+
+- **`run_single_forecast.py`**: CLI entrypoint for generating forecasts for individual assets. Can be called directly with an asset ID or used programmatically by the poller.
+
+- **`train_models.py`**: Trains OpenSTEF forecasting models using training data from S3. Can train models for specific assets or all available assets in batch mode.
 
 ## Prerequisites
 
@@ -45,8 +51,7 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 3. Install dependencies:
 ```bash
-pip install -r requirements.txt
-pip install -r test-requirements.txt
+./install_requirements.sh
 ```
 
 4. Install the package in editable mode (so imports work if running things locally)
@@ -55,7 +60,7 @@ pip install -r test-requirements.txt
 pip install -e .
 ```
 
-5. If you want to run some of the code locally which integrates with S3 and the MLFLOW server - create a `.env` file in the root directory with your AWS IAM and MLFLOW configs. Replace the placeholders with actual values. 
+5. If you want to run some of the code locally which integrates with a DB, an SQS queue, and the MLFLOW server - create a `.env` file in the root directory with your configs. Replace the placeholders with actual values. 
 
 ```bash
 # AWS Configuration
@@ -83,31 +88,40 @@ mlflow server --backend-store-uri $MLFLOW_DB_URI --default-artifact-root $MLFLOW
 
 Open your browser to `http://localhost:5050` to access MLFLow. 
 
-## Docker Setup
+## Local Docker Setup
 
-This project includes Docker configurations for containerized deployment and development. There are three Dockerfiles and a docker-compose setup:
+This project includes Docker configurations for containerized deployment and development. 
 
-The easiest way to run the entire system is using docker-compose:
+1. Generate a CodeArtifact Auth token so that internal packages can be downloaded.
 
-1. **Build and start all services:**
 ```bash
-docker-compose up --build
+export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token \
+  --domain skyblu \
+  --domain-owner 591082451778 \
+  --region $AWS_REGION \
+  --query authorizationToken \
+  --output text)
 ```
 
-2. **Run in detached mode:**
+2. If you want to use a local DB, ensure it is running (see forecasting-db repo)
+
+3. Build and start all services:
 ```bash
-docker-compose up -d --build
+docker-compose -f docker-compose.dev.yml build --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN" \
+                     --build-arg AWS_REGION="$AWS_REGION"
+
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-3. **Stop all services:**
+4. Stop all services:
 ```bash
 docker-compose down
 ```
 
-4. **View logs:**
+5. View logs:
 ```bash
 docker-compose logs -f mlflow
-docker-compose logs -f training-poller
+docker-compose logs -f measurement-poller
 ```
 
 ### Accessing Services
@@ -135,8 +149,8 @@ coverage run --source=forecasting_engine -m pytest test/orchestration/ && covera
 It is recommended to enable your IDE to run the pre-commit checks before submitting a commit.
 
 ```bash
-# pip install pre-commit
-# pre-commit install
+pip install pre-commit
+pre-commit install
 ```
 
 # About OpenSTEF

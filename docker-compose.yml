@@ -31,15 +31,25 @@ services:
     working_dir: /app
     command: tail -f /dev/null  
 
-  training-poller:  # Polls the SQS queue for new training jobs
+  forecast-poller:  # Polls the SQS queue for messages that there are new measurements. Generates forecasts.
     image: forecasting-base:latest
-    container_name: training-poller
+    container_name: forecast-poller
     env_file:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
-    command: python -m forecasting_engine.tasks.poll_training_queue
+    command: python -m forecasting_engine.tasks.poll_forecast_request_queue
+
+  forecast-enqueuer: # Check for new DB measurements to enqueue messages
+    image: forecasting-base:latest
+    container_name: forecast-enqueuer
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+    working_dir: /app
+    command: python -m forecasting_engine.tasks.forecast_request_producer
 
   cleanup:  # Calls a cleanup script every day to delete old temp files
     image: forecasting-base:latest

@@ -19,13 +19,6 @@ def get_s3_client():
     return boto3.client("s3")
 
 
-def extract_asset_id_from_s3_key(s3_key: str) -> str:
-    filename = os.path.basename(s3_key)  # e.g. "L9M_train.csv" or "L9M.csv"
-    filename_no_ext = os.path.splitext(filename)[0]  # Remove file extension first
-    asset_id = filename_no_ext.split("_")[0]  # Then split on underscore
-    return asset_id
-
-
 def find_matching_key(asset_id: str, prefix: str) -> str:
     """
     Searches S3 for a key that contains the asset_id in the file name under the given prefix.
@@ -130,36 +123,6 @@ def load_training_pd_from_s3(asset_id: str) -> pd.DataFrame:
     """
     s3_key = find_matching_key(asset_id=asset_id, prefix="training/")
     return load_training_csv_from_s3(s3_key)
-
-
-def save_forecast_csv_to_s3(df: pd.DataFrame, asset_id: str) -> None:
-    """
-    Saves a forecast DataFrame as a CSV file to S3 under:
-    forecasts/{asset_id}/{start}_{end}.csv
-
-    Args:
-        df (pd.DataFrame): Forecast DataFrame with a datetime index.
-        asset_id (str): ID of the asset the forecast belongs to.
-
-    Raises:
-        ValueError: If S3_BUCKET is not set.
-    """
-
-    s3_client = get_s3_client()
-
-    # Format start and end timestamps as YYYYMMDDTHHMM
-    start_str = df.index[0].strftime("%Y%m%dT%H%M")
-    end_str = df.index[-1].strftime("%Y%m%dT%H%M")
-
-    key = f"forecasts/{asset_id}/{start_str}_{end_str}.csv"
-
-    # Convert to CSV in memory
-    csv_buffer = StringIO()
-    df.to_csv(csv_buffer, index=True)
-
-    logger.info(f"Saving forecast to S3: {S3_BUCKET}/{key}")
-    s3_client.put_object(Bucket=S3_BUCKET, Key=key, Body=csv_buffer.getvalue())
-    logger.info("Forecast CSV successfully saved to S3.")
 
 
 def list_training_fsa_ids() -> List[str]:
