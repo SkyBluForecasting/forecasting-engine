@@ -31,9 +31,9 @@ services:
     working_dir: /app
     command: tail -f /dev/null  
 
-  forecast-poller:  # Polls the SQS queue for messages. Generates forecasts.
+  forecast-poller:  # Polls the SQS queue for messages that there are new measurements. Generates forecasts.
     image: forecasting-base:latest
-    container_name: measurement-poller
+    container_name: forecast-poller
     env_file:
       - .env
     volumes:
