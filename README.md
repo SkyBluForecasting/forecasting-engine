@@ -2,12 +2,6 @@
 
 The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS SQS Queue, MLFlow, and a PostgreSQL database.
 
-- OpenStef forecasting logic: Core model training and forecasting powered by OpenSTEF.
-- MLflow: Tracks and stores trained forecasting models and metadata in a PostgreSQL-backed MLflow server. Artifacts (trained model files) are stored on AWS S3.
-- AWS S3: Used as the central artifact store for Mlflow models.
-- PostgreSQL database: Stores measurements, forecasts, MLflow metadata, and other forecasting data.
-- Orchestration components: Custom code to trigger forecasts, handle message queues (SQS), and coordinate pipeline execution.
-
 This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
 
 ## What's in this repo
@@ -20,6 +14,18 @@ forecasting_engine/ **Included in deployments
 scripts/ # Test scripts for local testing ** NOT included in deployments
 test/ # Unit tests  ** NOT included in deployments
 ```
+
+### Key Tasks
+
+The `forecasting_engine/tasks/` directory contains the main executable scripts that orchestrate the forecasting pipeline:
+
+- **`forecast_request_producer.py`** (Enqueuer): Periodically checks the database for assets with new measurements and enqueues forecast requests to SQS. Runs every 30 minutes by default to identify which assets need new forecasts.
+
+- **`poll_forecast_request_queue.py`** (Poller): Continuously polls the SQS queue for forecast requests and processes them by calling the forecast generation pipeline. Handles message batching and error recovery.
+
+- **`run_single_forecast.py`**: CLI entrypoint for generating forecasts for individual assets. Can be called directly with an asset ID or used programmatically by the poller.
+
+- **`train_models.py`**: Trains OpenSTEF forecasting models using training data from S3. Can train models for specific assets or all available assets in batch mode.
 
 ## Prerequisites
 
