@@ -14,8 +14,18 @@ logging.basicConfig(
 
 def get_assets_to_forecast(measurement_io, forecast_run_io):
     """
-    Returns a dict of assets that need a new forecast.
-    {asset_id: ts_last_measurement}
+    Determine which assets require a new forecast based on their latest measurements.
+
+    Steps:
+      1. Retrieve the latest measurement timestamp for each asset.
+      2. Retrieve the most recent forecast run timestamp for the same set of assets.
+      3. Compare timestamps — if a measurement is newer than the last forecast,
+         that asset needs a new forecast run.
+
+    Returns:
+        dict[str, datetime]: A mapping of asset_id -> latest measurement timestamp
+                             for assets that require a forecast update.
+
     """
     latest_loads = measurement_io.get_latest_load_per_asset()
     if not latest_loads:
