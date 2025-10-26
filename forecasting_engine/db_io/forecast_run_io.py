@@ -2,6 +2,7 @@ from forecasting_engine.db_io.base_io import BaseIO
 from forecasting_db.models import ForecastRun
 from forecasting_engine.orchestration.logger_factory import get_logger
 import pandas as pd
+from sqlalchemy import func
 import datetime
 import uuid
 
@@ -75,3 +76,21 @@ class ForecastRunIO(BaseIO):
 
     def from_df(self, df: pd.DataFrame, *args, **kwargs):
         pass
+
+    def get_latest_forecast_run_per_asset(
+        self, asset_uuids: list[str]
+    ) -> dict[str, datetime.datetime]:
+        """
+        Returns {asset_uuid: latest_forecast_start_time}
+        """
+        if not asset_uuids:
+            return {}
+
+        rows = (
+            self.session.query(ForecastRun.asset_uuid, func.max(ForecastRun.start_time))
+            .filter(ForecastRun.asset_uuid.in_(asset_uuids))
+            .group_by(ForecastRun.asset_uuid)
+            .all()
+        )
+
+        return {r[0]: r[1] for r in rows}
