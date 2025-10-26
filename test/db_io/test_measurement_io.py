@@ -1,5 +1,7 @@
 import pytest
+from datetime import datetime
 import pandas as pd
+from unittest.mock import MagicMock
 from forecasting_engine.db_io.measurement_io import MeasurementsIO
 
 
@@ -188,3 +190,74 @@ def test_resample_to_frequency_with_datetime_index(make_io):
     assert isinstance(resampled.index, pd.DatetimeIndex)
     assert len(resampled) > 0
     assert "load" in resampled.columns
+
+
+def _make_mock_subquery():
+    """Helper to mock SQLAlchemy subquery object with .c attributes."""
+    mock_subq = MagicMock()
+    mock_subq.c.asset_uuid = "asset_uuid_col"
+    mock_subq.c.latest_ts = "latest_ts_col"
+    return mock_subq
+
+
+def test_get_latest_load_per_asset_no_filter(make_io, mock_session):
+    io = make_io(MeasurementsIO)
+
+    mock_query = MagicMock()
+    mock_session.query.return_value = mock_query
+    mock_query.filter = MagicMock(side_effect=lambda *args, **kwargs: mock_query)
+    mock_subq = _make_mock_subquery()
+    mock_query.group_by.return_value.subquery.return_value = mock_subq
+
+    mock_session.query.return_value.join.return_value.all.return_value = [
+        ("A1", datetime(2025, 1, 1, 12, 0), 100.0),
+        ("A2", datetime(2025, 1, 1, 11, 0), 200.0),
+    ]
+
+    result = io.get_latest_load_per_asset()
+
+    assert result == {
+        "A1": (datetime(2025, 1, 1, 12, 0), 100.0),
+        "A2": (datetime(2025, 1, 1, 11, 0), 200.0),
+    }
+
+    # Ensure first filter for metric was called
+    first_filter_arg = mock_query.filter.call_args_list[0][0][0]
+    assert "metric" in str(first_filter_arg)
+
+
+def test_get_latest_load_per_asset_with_filter(make_io, mock_session):
+    io = make_io(MeasurementsIO)
+
+    mock_query = MagicMock()
+    mock_session.query.return_value = mock_query
+    mock_query.filter = MagicMock(side_effect=lambda *args, **kwargs: mock_query)
+    mock_subq = _make_mock_subquery()
+    mock_query.group_by.return_value.subquery.return_value = mock_subq
+
+    mock_session.query.return_value.join.return_value.all.return_value = [
+        ("A1", datetime(2025, 1, 1, 10, 0), 123.4)
+    ]
+
+    result = io.get_latest_load_per_asset(["A1", "A2"])
+    assert result == {"A1": (datetime(2025, 1, 1, 10, 0), 123.4)}
+
+    # Ensure second filter for asset_uuids applied
+    second_filter_arg = mock_query.filter.call_args_list[1][0][0]
+    assert "asset_uuid" in str(second_filter_arg)
+
+
+def test_get_latest_load_per_asset_empty_result(make_io, mock_session):
+    """Should return empty dict if no rows found."""
+    io = make_io(MeasurementsIO)
+
+    mock_query = MagicMock()
+    mock_session.query.return_value = mock_query
+    mock_query.filter.return_value = mock_query
+    mock_subq = _make_mock_subquery()
+    mock_query.group_by.return_value.subquery.return_value = mock_subq
+
+    mock_session.query.return_value.join.return_value.all.return_value = []
+
+    result = io.get_latest_load_per_asset()
+    assert result == {}
