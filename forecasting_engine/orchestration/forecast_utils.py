@@ -50,35 +50,57 @@ class ForecastDataProcessor:
 
         return df
 
-    def add_forecast_horizon_nans(self) -> pd.DataFrame:
-        """
-        Preprocess historical data and append future NaN rows for the forecast horizon.
-        Future horizon always starts at CURRENT UTC time.
-        """
-        # 1. Preprocess historical data
-        df = self.preprocess().copy()
+    # ---------------------------------------------------------
+    # Helpers
+    # ---------------------------------------------------------
 
-        # 2. Anchor horizon at current UTC time
+    def _compute_horizon_times(self) -> pd.DatetimeIndex:
+        """Return DatetimeIndex for forecast horizon based on current time and job settings."""
         now = pd.Timestamp.utcnow().floor(f"{self.pj.resolution_minutes}min")
-        horizon_steps = int(self.pj.horizon_minutes / self.pj.resolution_minutes)
+        steps = int(self.pj.horizon_minutes / self.pj.resolution_minutes)
         freq = f"{self.pj.resolution_minutes}min"
+        return pd.date_range(start=now, periods=steps, freq=freq)
 
-        # 3. Filter out any historical rows that are >= now
-        df = df[df.index < now]
+    @staticmethod
+    def _clip_and_null_horizon(
+        df: pd.DataFrame, horizon_times: pd.DatetimeIndex
+    ) -> pd.DataFrame:
+        """Clip df to end of horizon and null out 'load' for horizon timestamps."""
+        df = df[df.index <= horizon_times[-1]].copy()
+        if "load" not in df.columns:
+            df["load"] = None
+        df.loc[df.index.isin(horizon_times), "load"] = None
+        return df
 
-        # 4. Create future horizon DataFrame
-        future_times = pd.date_range(start=now, periods=horizon_steps, freq=freq)
-        horizon_df = pd.DataFrame(index=future_times)
-        if "load" in df.columns:
-            horizon_df["load"] = None
+    @staticmethod
+    def _fill_missing_horizon_rows(
+        df: pd.DataFrame, horizon_times: pd.DatetimeIndex
+    ) -> pd.DataFrame:
+        """Ensure all horizon timestamps exist in df with load=None if missing."""
+        missing = [t for t in horizon_times if t not in df.index]
+        if not missing:
+            return df
 
-        # 5. Combine historical + horizon
-        combined = pd.concat([df, horizon_df], ignore_index=False)
+        horizon_df = pd.DataFrame(index=missing, columns=df.columns)
+        horizon_df["load"] = None
+        df = pd.concat([df, horizon_df])
+        df = df.sort_index()
+        return df
 
-        # 6. Safety: remove duplicates if any (keeps horizon values)
-        combined = combined[~combined.index.duplicated(keep="last")]
+    # ---------------------------------------------------------
+    # Main function
+    # ---------------------------------------------------------
 
-        return combined
+    def add_forecast_horizon_nans(self) -> pd.DataFrame:
+        """Append forecast horizon timestamps with load=None and ensure complete coverage."""
+        df = self.preprocess().copy()
+        df.index = pd.to_datetime(df.index)
+
+        horizon_times = self._compute_horizon_times()
+        df = self._clip_and_null_horizon(df, horizon_times)
+        df = self._fill_missing_horizon_rows(df, horizon_times)
+
+        return df
 
 
 def normalize_forecast_columns(df: pd.DataFrame) -> pd.DataFrame:
