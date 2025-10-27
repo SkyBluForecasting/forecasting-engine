@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-from datetime import timezone
 from unittest.mock import MagicMock
 from forecasting_engine.orchestration.forecast_utils import (
     ForecastDataProcessor,
@@ -73,96 +72,6 @@ def test_preprocess_deduplicates_and_sorts(mock_pj):
     # Should sort ascending and keep last duplicate (99)
     assert list(df_out["load"]) == [10, 99]
     assert df_out.index[0] < df_out.index[1]
-
-
-# ------------------------------------- -------------------------------
-# ForecastDataProcessor.add_forecast_horizon_nans
-# --------------------------------------------------------------------
-
-
-def test_add_forecast_horizon_nans_appends_future(simple_df, mock_pj):
-    processor = ForecastDataProcessor(simple_df, mock_pj)
-    df_out = processor.add_forecast_horizon_nans()
-
-    # Horizon: 3 hours (horizon_minutes / resolution_minutes)
-    expected_steps = int(mock_pj.horizon_minutes / mock_pj.resolution_minutes)
-
-    assert len(df_out) >= len(simple_df)
-    assert df_out.index[-expected_steps:].is_monotonic_increasing
-    # Future section should be NaNs
-    assert df_out.tail(expected_steps)["load"].isna().all()
-
-
-def test_add_forecast_horizon_nans_filters_future_data(simple_df, mock_pj):
-    # Push timestamps into the future
-    df = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(pd.Timestamp.utcnow(), periods=3, freq="H"),
-            "load": [1, 2, 3],
-        }
-    )
-    processor = ForecastDataProcessor(df, mock_pj)
-    df_out = processor.add_forecast_horizon_nans()
-
-    # All original rows should be filtered out (only horizon rows remain)
-    assert df_out["load"].isna().all()
-
-
-def test_add_forecast_horizon_nans_without_load(mock_pj):
-    mock_pj.resolution_minutes = 15
-    mock_pj.horizon_minutes = 60
-
-    # Historical dataframe WITHOUT 'load' column
-    df = pd.DataFrame(
-        {
-            "timestamp": pd.date_range("2025-01-01", periods=4, freq="15min", tz="UTC"),
-            "other_col": [1, 2, 3, 4],
-        }
-    )
-
-    processor = ForecastDataProcessor(df, mock_pj)
-    combined = processor.add_forecast_horizon_nans()
-
-    # Ensure 'load' was NOT added
-    assert "load" not in combined.columns
-    # Horizon rows should exist for future timestamps
-    now = (
-        pd.Timestamp.utcnow()
-        .floor(f"{mock_pj.resolution_minutes}min")
-        .replace(tzinfo=timezone.utc)
-    )
-
-    future_rows = combined.index >= now
-    assert len(combined.loc[future_rows]) == int(
-        mock_pj.horizon_minutes / mock_pj.resolution_minutes
-    )
-
-
-# def test_add_forecast_horizon_nans_load_branch(mock_pj):
-#     # Mock prediction job
-#     mock_pj.resolution_minutes = 15
-#     mock_pj.horizon_minutes = 60
-
-#     # Historical dataframe with 'load'
-#     df = pd.DataFrame({
-#         "timestamp": pd.date_range("2025-01-01", periods=4, freq="15min", tz="UTC"),
-#         "load": [10, 20, 30, 40],
-#     })
-
-#     processor = ForecastDataProcessor(df, mock_pj)
-#     combined = processor.add_forecast_horizon_nans()
-
-#     # Make 'now' consistent with processor logic
-#     now = pd.Timestamp.utcnow().floor(f"{mock_pj.resolution_minutes}min").tz_convert("UTC") if pd.Timestamp.utcnow().tzinfo else pd.Timestamp.utcnow().floor(f"{mock_pj.resolution_minutes}min").tz_localize("UTC")
-#     future_rows = combined.index >= now
-
-#     # Check horizon rows exist and have 'load' column with NaN values
-#     assert "load" in combined.columns
-#     assert combined.loc[future_rows, "load"].isna().all()
-
-#     # Ensure historical rows are preserved correctly
-#     historical_rows = combined.index < now
-#     assert combined.loc[historical_rows, "load"].notna().all()
 
 
 # --------------------------------------------------------------------
@@ -244,3 +153,111 @@ def test_normalize_forecast_columns_lowercase_and_strip():
     assert "timestamp" in out.columns
     assert "forecast" in out.columns
     assert out["forecast"].iloc[0] == 100
+
+
+# --------------------------------------------------------------------
+# ForecastDataProcessor.add_forecast_horizon_nans and helpers
+# --------------------------------------------------------------------
+
+
+def test_compute_horizon_times(mock_pj, simple_df):
+    processor = ForecastDataProcessor(simple_df, mock_pj)
+    horizon_times = processor._compute_horizon_times()
+
+    expected_steps = int(mock_pj.horizon_minutes / mock_pj.resolution_minutes)
+    assert len(horizon_times) == expected_steps
+    assert horizon_times.freqstr in {
+        f"{mock_pj.resolution_minutes}T",
+        f"{mock_pj.resolution_minutes}min",
+    }
+
+
+def test_clip_and_null_horizon_with_existing_load(simple_df, mock_pj):
+    simple_df["timestamp"] = pd.to_datetime(simple_df["timestamp"], utc=True)
+    df = simple_df.set_index("timestamp")
+    processor = ForecastDataProcessor(df, mock_pj)
+
+    now = pd.Timestamp.utcnow().floor(f"{mock_pj.resolution_minutes}min")
+    horizon_times = pd.date_range(
+        start=now, periods=3, freq=f"{mock_pj.resolution_minutes}min"
+    )
+
+    df_out = processor._clip_and_null_horizon(df, horizon_times)
+
+    # Horizon timestamps should have load=None
+    assert df_out.loc[df_out.index.isin(horizon_times), "load"].isna().all()
+
+    # Historical values should remain untouched
+    hist_mask = ~df_out.index.isin(horizon_times)
+    if hist_mask.any():
+        assert df_out.loc[hist_mask, "load"].notna().all()
+
+
+def test_clip_and_null_horizon_adds_load_column_if_missing(mock_pj):
+    df = pd.DataFrame(index=pd.date_range("2024-01-01", periods=3, freq="H"))
+    processor = ForecastDataProcessor(df, mock_pj)
+
+    horizon_times = pd.date_range("2024-01-01", periods=3, freq="H")
+    df_out = processor._clip_and_null_horizon(df, horizon_times)
+
+    assert "load" in df_out.columns
+    assert df_out["load"].isna().all()
+
+
+def test_fill_missing_horizon_rows_adds_missing(simple_df, mock_pj):
+    df = simple_df.set_index("timestamp").iloc[:-1]  # drop last timestamp
+    processor = ForecastDataProcessor(df, mock_pj)
+
+    now = df.index[-1]
+    horizon_times = pd.date_range(
+        start=now, periods=3, freq=f"{mock_pj.resolution_minutes}min"
+    )
+    df_out = processor._fill_missing_horizon_rows(df, horizon_times)
+
+    # Should contain all horizon timestamps
+    for ts in horizon_times:
+        assert ts in df_out.index
+
+    # New rows should have load=None
+    missing_ts = [t for t in horizon_times if t not in df.index]
+    assert df_out.loc[missing_ts, "load"].isna().all()
+
+
+def test_fill_missing_horizon_rows_no_missing(simple_df, mock_pj):
+    df = simple_df.set_index("timestamp")
+    processor = ForecastDataProcessor(df, mock_pj)
+    horizon_times = df.index
+    df_out = processor._fill_missing_horizon_rows(df, horizon_times)
+    pd.testing.assert_frame_equal(df_out, df)
+
+
+def test_add_forecast_horizon_nans_full(simple_df, mock_pj):
+    simple_df["timestamp"] = pd.to_datetime(simple_df["timestamp"], utc=True)
+    df = simple_df.set_index("timestamp")
+    processor = ForecastDataProcessor(df, mock_pj)
+    df_out = processor.add_forecast_horizon_nans()
+
+    expected_steps = int(mock_pj.horizon_minutes / mock_pj.resolution_minutes)
+    future_rows = df_out.index[-expected_steps:]
+
+    # Horizon timestamps should exist and have load=None
+    assert df_out.loc[future_rows, "load"].isna().all()
+
+    # Historical rows should keep original load values
+    historical_rows = df_out.index[:-expected_steps]
+    if len(historical_rows) > 0:
+        assert df_out.loc[historical_rows, "load"].notna().all()
+
+
+def test_add_forecast_horizon_nans_missing_load_column(simple_df, mock_pj):
+    simple_df["timestamp"] = pd.to_datetime(simple_df["timestamp"], utc=True)
+    # Drop the 'load' column (simulating missing load data)
+    df = simple_df.set_index("timestamp").drop(columns=["load"])
+
+    processor = ForecastDataProcessor(df, mock_pj)
+    df_out = processor.add_forecast_horizon_nans()
+
+    assert "load" in df_out.columns
+    expected_steps = int(mock_pj.horizon_minutes / mock_pj.resolution_minutes)
+    future_rows = df_out.index[-expected_steps:]
+    assert df_out.loc[future_rows, "load"].isna().all()
