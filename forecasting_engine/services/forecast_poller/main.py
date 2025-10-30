@@ -1,7 +1,7 @@
 import argparse
 import time
 import logging
-from forecasting_engine.orchestration.forecast_consumer import (
+from forecasting_engine.services.forecast_poller.consumer import (
     process_measurement_queue_message,
 )
 from forecasting_engine.config import SQS_CLIENT, QUEUE_URL

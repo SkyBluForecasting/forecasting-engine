@@ -1,6 +1,6 @@
 from forecasting_engine.db_io.base_io import BaseIO
 from forecasting_db.models import ForecastRun
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 import pandas as pd
 from sqlalchemy import func
 import datetime

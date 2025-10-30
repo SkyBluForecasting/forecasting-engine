@@ -1,31 +1,26 @@
 # Forecasting Engine
 
-The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and adds orchestration components that connect to AWS SQS Queue, MLFlow, and a PostgreSQL database.
-
-This repo is designed to be deployed on an EC2 instance and serves as the backend forecasting engine in a larger forecasting system.
+The **Forecasting Engine** is a Python-based service for generating short-term energy forecasts. It builds on the open-source [OpenSTEF](https://github.com/OpenSTEF/openstef) forecasting library, and has services that connect to an AWS SQS Queue, MLFlow, and a PostgreSQL database.
 
 ## What's in this repo
 
 ```
-forecasting_engine/ **Included in deployments
-├── openstef/ # Core licensed forecasting logic 
-├── orchestration/ # Custom logic to run forecasts, load and push DB data, poll SQS. 
-├── tasks/ # Executable scripts (polling, cron, CLI entrypoints) 
-scripts/ # Test scripts for local testing ** NOT included in deployments
-test/ # Unit tests  ** NOT included in deployments
+forecasting_engine/  # Included in deployments
+├── openstef/         # Core forecasting library
+├── db_io/            # Database access layer (sessions, reads/writes)
+├── services/         # Long-running services (Dockerized)
+│   ├── forecast_enqueuer/  # Checks DB, enqueues SQS forecast requests
+│   ├── forecast_poller/    # Polls SQS and runs forecasts
+│   └── model_trainer/      # Trains models with MLflow + S3
+├── shared/           # Reusable business logic and utilities
+│   ├── forecast_runner.py  # Core forecast generation
+│   ├── forecast_utils.py   # Forecast data helpers
+│   ├── logger_factory.py   # Logging setup
+│   └── s3_utils.py         # S3 utilities
+├── tasks/            # CLI entrypoints
+scripts/              # Local testing helpers (not deployed)
+test/                 # Unit/integration tests (not deployed)
 ```
-
-### Key Tasks
-
-The `forecasting_engine/tasks/` directory contains the main executable scripts that orchestrate the forecasting pipeline:
-
-- **`forecast_request_producer.py`** (Enqueuer): Periodically checks the database for assets with new measurements and enqueues forecast requests to SQS. Runs every 30 minutes by default to identify which assets need new forecasts.
-
-- **`poll_forecast_request_queue.py`** (Poller): Continuously polls the SQS queue for forecast requests and processes them by calling the forecast generation pipeline. Handles message batching and error recovery.
-
-- **`run_single_forecast.py`**: CLI entrypoint for generating forecasts for individual assets. Can be called directly with an asset ID or used programmatically by the poller.
-
-- **`train_models.py`**: Trains OpenSTEF forecasting models using training data from S3. Can train models for specific assets or all available assets in batch mode.
 
 ## Prerequisites
 

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta, timezone
 
-from forecasting_engine.orchestration import forecast_enqueuer as enqueuer
+from forecasting_engine.services.forecast_enqueuer import forecast_enqueuer as enqueuer
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def fake_forecast_run_io():
 @pytest.fixture
 def fake_sqs_client():
     with patch(
-        "forecasting_engine.orchestration.forecast_enqueuer.SQS_CLIENT"
+        "forecasting_engine.services.forecast_enqueuer.forecast_enqueuer.SQS_CLIENT"
     ) as mock_sqs:
         yield mock_sqs
 
@@ -139,7 +139,7 @@ def test_enqueue_new_forecasts_no_assets(monkeypatch):
     monkeypatch.setattr(enqueuer, "get_assets_to_forecast", lambda m, f: {})
 
     with patch(
-        "forecasting_engine.orchestration.forecast_enqueuer.logger"
+        "forecasting_engine.services.forecast_enqueuer.forecast_enqueuer.logger"
     ) as mock_logger:
         enqueuer.enqueue_new_forecasts()
         mock_logger.warning.assert_called_with("No assets require a forecast")

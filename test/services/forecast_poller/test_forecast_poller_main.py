@@ -1,7 +1,6 @@
-# test_poll_measurement_queue.py
 import pytest
 from unittest.mock import Mock
-import forecasting_engine.tasks.poll_forecast_request_queue as poller
+import forecasting_engine.services.forecast_poller.main as poller
 
 
 # ----------------------------

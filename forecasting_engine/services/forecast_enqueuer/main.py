@@ -1,7 +1,9 @@
 import argparse
 import time
 import logging
-from forecasting_engine.orchestration.forecast_enqueuer import enqueue_new_forecasts
+from forecasting_engine.services.forecast_enqueuer.forecast_enqueuer import (
+    enqueue_new_forecasts,
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
