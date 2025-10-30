@@ -1,6 +1,6 @@
 from .base_io import BaseIO
 from forecasting_db.models import Forecast
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 import pandas as pd
 
 logger = get_logger(__name__)

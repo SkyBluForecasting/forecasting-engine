@@ -1,10 +1,10 @@
 import pytest
 import pandas as pd
 from unittest.mock import MagicMock, patch
-from forecasting_engine.orchestration.forecast_runner import (
+from forecasting_engine.shared.forecast_runner import (
     build_prediction_job,
     run_openstef_forecast,
-    generate_forecast_for_asset,
+    ForecastManager,
 )
 
 
@@ -35,7 +35,6 @@ def mock_forecast_df(input_df):
 
 
 class TestBuildPredictionJob:
-
     def test_build_prediction_job_fields(self):
         pj = build_prediction_job("ASSET123")
         assert pj.id == "ASSET123"
@@ -53,12 +52,11 @@ class TestBuildPredictionJob:
 
 
 class TestRunOpenstefForecast:
-
     def test_run_openstef_forecast_success(self, pj, input_df, mock_forecast_df):
         with patch(
-            "forecasting_engine.orchestration.forecast_runner.MLflowSerializer"
+            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
         ) as mock_serializer_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.create_forecast_pipeline_core"
+            "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core"
         ) as mock_pipeline:
 
             mock_serializer = MagicMock()
@@ -67,7 +65,6 @@ class TestRunOpenstefForecast:
                 [{"run_id": "123"}]
             )
             mock_serializer.load_model.return_value = ("model", "specs")
-
             mock_pipeline.return_value = mock_forecast_df
 
             df, run_id = run_openstef_forecast(pj, input_df, "mlflow_uri")
@@ -76,7 +73,7 @@ class TestRunOpenstefForecast:
 
     def test_run_openstef_forecast_no_model(self, pj, input_df):
         with patch(
-            "forecasting_engine.orchestration.forecast_runner.MLflowSerializer"
+            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
         ) as mock_serializer_cls:
             mock_serializer = MagicMock()
             mock_serializer_cls.return_value = mock_serializer
@@ -87,9 +84,9 @@ class TestRunOpenstefForecast:
 
     def test_run_openstef_forecast_pipeline_error(self, pj, input_df):
         with patch(
-            "forecasting_engine.orchestration.forecast_runner.MLflowSerializer"
+            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
         ) as mock_serializer_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.create_forecast_pipeline_core"
+            "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core"
         ) as mock_pipeline:
 
             mock_serializer = MagicMock()
@@ -98,7 +95,6 @@ class TestRunOpenstefForecast:
                 [{"run_id": "123"}]
             )
             mock_serializer.load_model.return_value = ("model", "specs")
-
             mock_pipeline.side_effect = RuntimeError("Pipeline failed")
 
             with pytest.raises(RuntimeError, match="Pipeline failed"):
@@ -111,46 +107,40 @@ class TestRunOpenstefForecast:
 
 
 class TestForecastManager:
-
     @pytest.fixture(autouse=True)
-    def patch_session_io(self, mock_forecast_df, input_df):
+    def patch_forecast_dependencies(self, mock_forecast_df, input_df):
         with patch(
-            "forecasting_engine.orchestration.forecast_runner.SessionLocal"
-        ) as mock_session_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.MeasurementsIO"
+            "forecasting_engine.shared.forecast_runner.MeasurementsIO"
         ) as mock_meas_io_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.PredictionJobIO"
+            "forecasting_engine.shared.forecast_runner.PredictionJobIO"
         ) as mock_pj_io_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.ForecastRunIO"
+            "forecasting_engine.shared.forecast_runner.ForecastRunIO"
         ) as mock_fr_io_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.ForecastIO"
+            "forecasting_engine.shared.forecast_runner.ForecastIO"
         ) as mock_f_io_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.ConstraintsIO"
+            "forecasting_engine.shared.forecast_runner.ConstraintsIO"
         ) as mock_constraints_io_cls, patch(
-            "forecasting_engine.orchestration.forecast_runner.run_openstef_forecast"
+            "forecasting_engine.shared.forecast_runner.run_openstef_forecast"
         ) as mock_run_forecast, patch(
-            "forecasting_engine.orchestration.forecast_runner.ForecastDataProcessor"
+            "forecasting_engine.shared.forecast_runner.ForecastDataProcessor"
         ) as mock_processor_cls:
 
-            # Mock session
+            # Mock session (we can just use a dummy)
             mock_session = MagicMock()
-            mock_session_cls.return_value.__enter__.return_value = mock_session
 
             # Mock measurements
             mock_meas_io = MagicMock()
             mock_meas_io.to_df.return_value = input_df
             mock_meas_io_cls.return_value = mock_meas_io
 
-            # Mock other IO classes
+            # Mock other IOs
             mock_pj_io_cls.return_value.get_or_create.return_value = "pj_id"
             mock_fr_io_cls.return_value.create.return_value = "fr_id"
             mock_f_io_cls.return_value.from_df.return_value = None
             mock_constraints_io_cls.return_value.from_forecast.return_value = None
 
-            # Mock forecast
+            # Mock forecast + processor
             mock_run_forecast.return_value = (mock_forecast_df, "mlflow_run_id")
-
-            # Mock processor
             mock_processor = MagicMock()
             mock_processor.add_forecast_horizon_nans.return_value = input_df
             mock_processor_cls.return_value = mock_processor
@@ -169,11 +159,12 @@ class TestForecastManager:
             yield
 
     def test_generate_forecast_success(self):
-        df = generate_forecast_for_asset("ASSET123")
+        fm = ForecastManager(self.mocks["session"])
+        df = fm.generate_forecast("ASSET123")
         assert isinstance(df, pd.DataFrame)
         assert "forecast" in df.columns
 
-        # Confirm all main steps were called
+        # Verify major steps were called
         self.mocks["measurements_io"].to_df.assert_called_once_with("ASSET123")
         self.mocks["processor"].add_forecast_horizon_nans.assert_called_once()
         self.mocks["pj_io"].get_or_create.assert_called_once()
@@ -184,10 +175,12 @@ class TestForecastManager:
 
     def test_generate_forecast_no_measurements(self):
         self.mocks["measurements_io"].to_df.return_value = pd.DataFrame()
+        fm = ForecastManager(self.mocks["session"])
         with pytest.raises(ValueError, match="No measurements found"):
-            generate_forecast_for_asset("ASSET_EMPTY")
+            fm.generate_forecast("ASSET_EMPTY")
 
     def test_generate_forecast_pipeline_error(self):
         self.mocks["run_forecast"].side_effect = RuntimeError("Pipeline error")
+        fm = ForecastManager(self.mocks["session"])
         with pytest.raises(RuntimeError, match="Pipeline error"):
-            generate_forecast_for_asset("ASSET_FAIL")
+            fm.generate_forecast("ASSET_FAIL")

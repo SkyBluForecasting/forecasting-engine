@@ -4,7 +4,7 @@ import os
 import boto3
 import re
 import pandas as pd
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 from typing import List
 from io import StringIO
 from forecasting_engine.config import S3_BUCKET

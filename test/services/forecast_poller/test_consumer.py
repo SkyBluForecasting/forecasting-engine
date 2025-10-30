@@ -1,9 +1,8 @@
-# test_forecast_consumer.py
 import json
 import pytest
 from unittest.mock import patch
 
-import forecasting_engine.orchestration.forecast_consumer as forecast_consumer
+import forecasting_engine.services.forecast_poller.consumer as forecast_consumer
 
 
 @pytest.fixture

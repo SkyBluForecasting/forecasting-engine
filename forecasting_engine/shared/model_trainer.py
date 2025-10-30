@@ -1,4 +1,3 @@
-import argparse
 import pandas as pd
 from typing import List, Dict, Any, Optional
 
@@ -7,9 +6,9 @@ from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
 
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 
-from forecasting_engine.orchestration.s3_utils import (
+from forecasting_engine.shared.s3_utils import (
     load_training_pd_from_s3,
     list_training_fsa_ids,
 )
@@ -120,23 +119,3 @@ def train_all():
         logger.info(f"[{i}/{len(keys)}] Training {key} ...", flush=True)
         results.append(train_single_fsa(key))
     return results
-
-
-def main():  # pragma: no cover
-    ap = argparse.ArgumentParser(
-        description="Train OpenSTEF models on EC2 using S3 training data + MLflow."
-    )
-    ap.add_argument(
-        "--fsa-id",
-        help="Train only this FSA (e.g., L9M). If omitted, trains all *_train.csv in the prefix.",
-    )
-    args = ap.parse_args()
-
-    if args.fsa_id:
-        train_single_fsa(args.fsa_id.upper())
-    else:
-        train_all()
-
-
-if __name__ == "__main__":  # pragma: no cover
-    main()

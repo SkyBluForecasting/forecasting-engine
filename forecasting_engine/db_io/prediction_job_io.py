@@ -3,7 +3,7 @@ from forecasting_db.models import PredictionJob
 from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 import pandas as pd
 
 logger = get_logger(__name__)

@@ -7,9 +7,9 @@ from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
 
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 
-from forecasting_engine.orchestration.s3_utils import (
+from forecasting_engine.shared.s3_utils import (
     load_training_pd_from_s3,
     list_training_fsa_ids,
 )

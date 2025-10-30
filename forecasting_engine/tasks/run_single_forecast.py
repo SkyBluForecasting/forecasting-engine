@@ -5,14 +5,14 @@ This script can be:
 - Called directly via CLI with an asset ID as an argument.
 - Imported and used via the `run_asset_forecast()` function in a polling or batch-processing script.
 
-It wraps `generate_forecast_for_asset()` and returns structured results for robust error handling.
 Designed to be safe for orchestration use (e.g., EventBridge, polling scripts).
 """
 
 import argparse
 import sys
-from forecasting_engine.orchestration.forecast_runner import generate_forecast_for_asset
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.forecast_runner import ForecastManager
+from forecasting_engine.db_io.session import SessionLocal
+from forecasting_engine.shared.logger_factory import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,48 +27,34 @@ def run_asset_forecast(asset_id: str) -> dict:
     Returns:
         dict: A structured result dictionary with the following keys:
             - 'asset_id' (str): The ID of the asset processed.
-            - 'status' (str): One of the following status values:
+            - 'status' (str): One of:
                 * "success"      — Forecast was generated successfully.
-                * "not_found"    — A required file or input was missing (FileNotFoundError).
-                * "bad_input"    — Asset input was invalid or improperly formatted (ValueError).
-                * "fatal_error"  — An unexpected error occurred (generic Exception).
-            - 'message' (str or None): A human-readable error message if applicable, otherwise None.
-
-    Side Effects:
-        - Logs messages at ERROR or EXCEPTION level using the system logger.
-
-    Notes:
-        This function is designed to be safely called in a polling or batch-processing context.
-        It should not raise uncaught exceptions or call sys.exit().
+                * "not_found"    — Missing required input (FileNotFoundError).
+                * "bad_input"    — Invalid or missing measurements (ValueError).
+                * "fatal_error"  — Unexpected exception.
+            - 'message' (str or None): Human-readable error message if applicable.
     """
     try:
-        generate_forecast_for_asset(asset_id)
+        with SessionLocal() as session:
+            fm = ForecastManager(session)
+            fm.generate_forecast(asset_id)
         return {
             "asset_id": asset_id,
             "status": "success",
             "message": None,
         }
+
     except FileNotFoundError as e:
         logger.error(f"[NOT FOUND] {e}")
-        return {
-            "asset_id": asset_id,
-            "status": "not_found",
-            "message": str(e),
-        }
+        return {"asset_id": asset_id, "status": "not_found", "message": str(e)}
+
     except ValueError as e:
         logger.error(f"[BAD INPUT] {e}")
-        return {
-            "asset_id": asset_id,
-            "status": "bad_input",
-            "message": str(e),
-        }
+        return {"asset_id": asset_id, "status": "bad_input", "message": str(e)}
+
     except Exception as e:
         logger.exception(f"[FATAL] Unexpected error for asset {asset_id}: {e}")
-        return {
-            "asset_id": asset_id,
-            "status": "fatal_error",
-            "message": str(e),
-        }
+        return {"asset_id": asset_id, "status": "fatal_error", "message": str(e)}
 
 
 def main():
@@ -77,8 +63,18 @@ def main():
         "asset_id", type=str, help="Asset ID for which to generate the forecast."
     )
     args = parser.parse_args()
-    exit_code = run_asset_forecast(args.asset_id)
-    sys.exit(exit_code)
+
+    result = run_asset_forecast(args.asset_id)
+    logger.info(f"Forecast run result: {result}")
+
+    # Exit code mapping
+    status_to_exit_code = {
+        "success": 0,
+        "not_found": 1,
+        "bad_input": 2,
+        "fatal_error": 3,
+    }
+    sys.exit(status_to_exit_code.get(result["status"], 3))
 
 
 if __name__ == "__main__":  # pragma: no cover

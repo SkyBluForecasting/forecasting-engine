@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from unittest.mock import MagicMock
-from forecasting_engine.orchestration.forecast_utils import (
+from forecasting_engine.shared.forecast_utils import (
     ForecastDataProcessor,
     normalize_forecast_columns,
     QUANTILE_MAP,

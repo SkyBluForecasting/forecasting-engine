@@ -11,15 +11,14 @@ from forecasting_engine.openstef.pipeline.create_forecast import (
 from forecasting_engine.openstef.data_classes.prediction_job import (
     PredictionJobDataClass,
 )
-from forecasting_engine.orchestration.logger_factory import get_logger
+from forecasting_engine.shared.logger_factory import get_logger
 from forecasting_engine.config import MLFLOW_TRACKING_URI
-from forecasting_engine.db_io.session import SessionLocal
 from forecasting_engine.db_io.forecast_io import ForecastIO
 from forecasting_engine.db_io.constraint_io import ConstraintsIO
 from forecasting_engine.db_io.measurement_io import MeasurementsIO
 from forecasting_engine.db_io.forecast_run_io import ForecastRunIO
 from forecasting_engine.db_io.prediction_job_io import PredictionJobIO
-from forecasting_engine.orchestration.forecast_utils import (
+from forecasting_engine.shared.forecast_utils import (
     ForecastDataProcessor,
     normalize_forecast_columns,
 )
@@ -147,10 +146,3 @@ class ForecastManager:
             f"Total forecast generation time for asset {asset_id}: {total_elapsed:.2f}s"
         )
         return forecast_df
-
-
-def generate_forecast_for_asset(asset_id: str):
-    logger.info(f"=== Starting forecast generation for asset: {asset_id} ===")
-    with SessionLocal() as session:
-        manager = ForecastManager(session)
-        return manager.generate_forecast(asset_id)

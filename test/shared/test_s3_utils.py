@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 from io import BytesIO
 from unittest.mock import patch, MagicMock
-from forecasting_engine.orchestration.s3_utils import (
+from forecasting_engine.shared.s3_utils import (
     find_matching_key,
     load_training_csv_from_s3,
     load_training_pd_from_s3,
@@ -18,16 +18,14 @@ from forecasting_engine.orchestration.s3_utils import (
 @pytest.fixture(autouse=True)
 def patch_s3_bucket(monkeypatch):
     """Force S3_BUCKET import reference to a dummy value."""
-    monkeypatch.setattr(
-        "forecasting_engine.orchestration.s3_utils.S3_BUCKET", "dummy-bucket"
-    )
+    monkeypatch.setattr("forecasting_engine.shared.s3_utils.S3_BUCKET", "dummy-bucket")
 
 
 @pytest.fixture
 def mock_s3_client():
     client = MagicMock()
     with patch(
-        "forecasting_engine.orchestration.s3_utils.get_s3_client",
+        "forecasting_engine.shared.s3_utils.get_s3_client",
         return_value=client,
     ):
         yield client
@@ -86,7 +84,7 @@ def test_find_matching_key_multiple_matches_logs_warning(mock_s3_client):
     ]
     mock_s3_client.get_paginator.return_value = paginator
 
-    with patch("forecasting_engine.orchestration.s3_utils.logger.warning") as mock_warn:
+    with patch("forecasting_engine.shared.s3_utils.logger.warning") as mock_warn:
         key = find_matching_key("12345", "training/")
         mock_warn.assert_called_once()
         assert "Multiple files found" in mock_warn.call_args[0][0]
@@ -137,8 +135,8 @@ def test_load_training_csv_from_s3_empty_file(mock_s3_client):
 # ---------------------------
 
 
-@patch("forecasting_engine.orchestration.s3_utils.find_matching_key")
-@patch("forecasting_engine.orchestration.s3_utils.load_training_csv_from_s3")
+@patch("forecasting_engine.shared.s3_utils.find_matching_key")
+@patch("forecasting_engine.shared.s3_utils.load_training_csv_from_s3")
 def test_load_training_pd_from_s3_success(mock_load_csv, mock_find_key):
     mock_find_key.return_value = "training/ABC_train.csv"
     df = pd.DataFrame(
