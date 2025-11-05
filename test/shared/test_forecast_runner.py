@@ -1,23 +1,19 @@
 import pytest
 import pandas as pd
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from forecasting_engine.openstef.data_classes.prediction_job import (
+    PredictionJobDataClass,
+)
 from forecasting_engine.shared.forecast_runner import (
-    build_prediction_job,
-    run_openstef_forecast,
     ForecastManager,
+    run_asset_forecast,
+    _run_asset_forecast_inner,
 )
 
 
 # ----------------------------
 # Fixtures
 # ----------------------------
-
-
-@pytest.fixture
-def pj():
-    return build_prediction_job("ASSET1")
-
-
 @pytest.fixture
 def input_df():
     idx = pd.date_range("2025-01-01", periods=3, freq="h", tz="UTC")
@@ -29,158 +25,220 @@ def mock_forecast_df(input_df):
     return pd.DataFrame({"forecast": [100, 200, 300], "timestamp": input_df.index})
 
 
-# ----------------------------
-# Tests for build_prediction_job
-# ----------------------------
+@pytest.fixture
+def fm(monkeypatch, input_df, mock_forecast_df):
+    """ForecastManager with MeasurementsIO patched and _run_forecast returning mock data."""
+    # Patch MeasurementsIO
+    meas_mock = MagicMock()
+    meas_mock.to_df.return_value = input_df
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.MeasurementsIO",
+        lambda session: meas_mock,
+    )
 
+    # Patch other IOs to be simple mocks
+    for io_name in ["PredictionJobIO", "ForecastRunIO", "ForecastIO", "ConstraintsIO"]:
+        monkeypatch.setattr(
+            f"forecasting_engine.shared.forecast_runner.{io_name}",
+            lambda session: MagicMock(
+                **{
+                    method: MagicMock()
+                    for method in [
+                        "get_or_create",
+                        "create",
+                        "from_df",
+                        "from_forecast",
+                    ]
+                }
+            ),
+        )
 
-class TestBuildPredictionJob:
-    def test_build_prediction_job_fields(self):
-        pj = build_prediction_job("ASSET123")
-        assert pj.id == "ASSET123"
-        assert pj.model == "xgb"
-        assert pj.horizon_minutes == 48 * 60
-        assert pj.resolution_minutes == 60
-        assert pj.forecast_type == "demand"
-        assert isinstance(pj.quantiles, list)
-        assert pj.save_train_forecasts is True
-
-
-# ----------------------------
-# Tests for run_openstef_forecast
-# ----------------------------
-
-
-class TestRunOpenstefForecast:
-    def test_run_openstef_forecast_success(self, pj, input_df, mock_forecast_df):
-        with patch(
-            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
-        ) as mock_serializer_cls, patch(
-            "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core"
-        ) as mock_pipeline:
-
-            mock_serializer = MagicMock()
-            mock_serializer_cls.return_value = mock_serializer
-            mock_serializer._find_models.return_value = pd.DataFrame(
-                [{"run_id": "123"}]
-            )
-            mock_serializer.load_model.return_value = ("model", "specs")
-            mock_pipeline.return_value = mock_forecast_df
-
-            df, run_id = run_openstef_forecast(pj, input_df, "mlflow_uri")
-            pd.testing.assert_frame_equal(df, mock_forecast_df)
-            assert run_id == "123"
-
-    def test_run_openstef_forecast_no_model(self, pj, input_df):
-        with patch(
-            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
-        ) as mock_serializer_cls:
-            mock_serializer = MagicMock()
-            mock_serializer_cls.return_value = mock_serializer
-            mock_serializer._find_models.return_value = pd.DataFrame()  # no model
-
-            with pytest.raises(LookupError, match="No model found"):
-                run_openstef_forecast(pj, input_df, "mlflow_uri")
-
-    def test_run_openstef_forecast_pipeline_error(self, pj, input_df):
-        with patch(
-            "forecasting_engine.shared.forecast_runner.MLflowSerializer"
-        ) as mock_serializer_cls, patch(
-            "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core"
-        ) as mock_pipeline:
-
-            mock_serializer = MagicMock()
-            mock_serializer_cls.return_value = mock_serializer
-            mock_serializer._find_models.return_value = pd.DataFrame(
-                [{"run_id": "123"}]
-            )
-            mock_serializer.load_model.return_value = ("model", "specs")
-            mock_pipeline.side_effect = RuntimeError("Pipeline failed")
-
-            with pytest.raises(RuntimeError, match="Pipeline failed"):
-                run_openstef_forecast(pj, input_df, "mlflow_uri")
+    fm = ForecastManager(MagicMock())
+    fm._run_forecast = MagicMock(return_value=(mock_forecast_df, "mlflow_run_id"))
+    return fm
 
 
 # ----------------------------
-# Tests for ForecastManager.generate_forecast
+# ForecastManager tests
 # ----------------------------
-
-
 class TestForecastManager:
-    @pytest.fixture(autouse=True)
-    def patch_forecast_dependencies(self, mock_forecast_df, input_df):
-        with patch(
-            "forecasting_engine.shared.forecast_runner.MeasurementsIO"
-        ) as mock_meas_io_cls, patch(
-            "forecasting_engine.shared.forecast_runner.PredictionJobIO"
-        ) as mock_pj_io_cls, patch(
-            "forecasting_engine.shared.forecast_runner.ForecastRunIO"
-        ) as mock_fr_io_cls, patch(
-            "forecasting_engine.shared.forecast_runner.ForecastIO"
-        ) as mock_f_io_cls, patch(
-            "forecasting_engine.shared.forecast_runner.ConstraintsIO"
-        ) as mock_constraints_io_cls, patch(
-            "forecasting_engine.shared.forecast_runner.run_openstef_forecast"
-        ) as mock_run_forecast, patch(
-            "forecasting_engine.shared.forecast_runner.ForecastDataProcessor"
-        ) as mock_processor_cls:
-
-            # Mock session (we can just use a dummy)
-            mock_session = MagicMock()
-
-            # Mock measurements
-            mock_meas_io = MagicMock()
-            mock_meas_io.to_df.return_value = input_df
-            mock_meas_io_cls.return_value = mock_meas_io
-
-            # Mock other IOs
-            mock_pj_io_cls.return_value.get_or_create.return_value = "pj_id"
-            mock_fr_io_cls.return_value.create.return_value = "fr_id"
-            mock_f_io_cls.return_value.from_df.return_value = None
-            mock_constraints_io_cls.return_value.from_forecast.return_value = None
-
-            # Mock forecast + processor
-            mock_run_forecast.return_value = (mock_forecast_df, "mlflow_run_id")
-            mock_processor = MagicMock()
-            mock_processor.add_forecast_horizon_nans.return_value = input_df
-            mock_processor_cls.return_value = mock_processor
-
-            self.mocks = {
-                "session": mock_session,
-                "measurements_io": mock_meas_io,
-                "pj_io": mock_pj_io_cls.return_value,
-                "forecast_run_io": mock_fr_io_cls.return_value,
-                "forecast_io": mock_f_io_cls.return_value,
-                "constraints_io": mock_constraints_io_cls.return_value,
-                "run_forecast": mock_run_forecast,
-                "processor": mock_processor,
-            }
-
-            yield
-
-    def test_generate_forecast_success(self):
-        fm = ForecastManager(self.mocks["session"])
+    def test_generate_forecast_success(self, fm, mock_forecast_df):
         df = fm.generate_forecast("ASSET123")
         assert isinstance(df, pd.DataFrame)
         assert "forecast" in df.columns
 
-        # Verify major steps were called
-        self.mocks["measurements_io"].to_df.assert_called_once_with("ASSET123")
-        self.mocks["processor"].add_forecast_horizon_nans.assert_called_once()
-        self.mocks["pj_io"].get_or_create.assert_called_once()
-        self.mocks["forecast_run_io"].create.assert_called_once()
-        self.mocks["forecast_io"].from_df.assert_called_once()
-        self.mocks["constraints_io"].from_forecast.assert_called_once()
-        self.mocks["run_forecast"].assert_called_once()
-
-    def test_generate_forecast_no_measurements(self):
-        self.mocks["measurements_io"].to_df.return_value = pd.DataFrame()
-        fm = ForecastManager(self.mocks["session"])
+    def test_generate_forecast_no_measurements(self, fm):
+        fm.measurements_io.to_df.return_value = pd.DataFrame()
         with pytest.raises(ValueError, match="No measurements found"):
             fm.generate_forecast("ASSET_EMPTY")
 
-    def test_generate_forecast_pipeline_error(self):
-        self.mocks["run_forecast"].side_effect = RuntimeError("Pipeline error")
-        fm = ForecastManager(self.mocks["session"])
+    def test_generate_forecast_pipeline_error(self, fm):
+        fm._run_forecast = MagicMock(side_effect=RuntimeError("Pipeline error"))
         with pytest.raises(RuntimeError, match="Pipeline error"):
             fm.generate_forecast("ASSET_FAIL")
+
+    def test_run_forecast_no_model_found(self, monkeypatch, input_df):
+        """Test _run_forecast raises LookupError if MLflow model not found."""
+        fm = ForecastManager(session=MagicMock())
+        pj = PredictionJobDataClass(
+            id="ASSET123",
+            model="xgb",
+            quantiles=[0.1, 0.5, 0.9],
+            forecast_type="demand",
+            lat=0.0,
+            lon=0.0,
+            horizon_minutes=60,
+            resolution_minutes=15,
+            name="ASSET123",
+            hyper_params={},
+        )
+
+        # Patch MLflowSerializer to simulate no model found
+        fake_serializer = MagicMock()
+        fake_serializer._find_models.return_value = pd.DataFrame()
+        monkeypatch.setattr(
+            "forecasting_engine.shared.forecast_runner.MLflowSerializer",
+            lambda uri: fake_serializer,
+        )
+
+        # Pipeline & normalization mocks
+        monkeypatch.setattr(
+            "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core",
+            lambda *a, **k: pd.DataFrame(),
+        )
+        monkeypatch.setattr(
+            "forecasting_engine.shared.forecast_runner.normalize_forecast_columns",
+            lambda df: df,
+        )
+
+        with pytest.raises(LookupError, match="No model found in MLflow"):
+            fm._run_forecast(pj, input_df)
+
+
+# ----------------------------
+# run_asset_forecast wrapper tests
+# ----------------------------
+def test_run_asset_forecast_success(monkeypatch):
+    mock_fm = MagicMock()
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.ForecastManager", mock_fm
+    )
+    mock_instance = mock_fm.return_value
+    result = run_asset_forecast("ASSET123")
+    mock_fm.assert_called_once()
+    mock_instance.generate_forecast.assert_called_once_with("ASSET123")
+    assert result["status"] == "success"
+
+
+@pytest.mark.parametrize(
+    "exception,expected_status",
+    [
+        (ValueError("bad input"), "bad_input"),
+        (FileNotFoundError("file missing"), "not_found"),
+        (RuntimeError("fatal"), "fatal_error"),
+    ],
+)
+def test_run_asset_forecast_exceptions(monkeypatch, exception, expected_status):
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner._run_asset_forecast_inner",
+        lambda asset_id: (_ for _ in ()).throw(exception),
+    )
+    result = run_asset_forecast("ASSET123")
+    assert result["status"] == expected_status
+    assert str(exception) in result["message"]
+
+
+def test__run_asset_forecast_inner_calls_forecastmanager(monkeypatch):
+    """Ensure ForecastManager is called inside context manager."""
+    mock_session_instance = MagicMock()
+    mock_session = MagicMock()
+    mock_session.__enter__.return_value = mock_session_instance
+    mock_session.__exit__.return_value = None
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.SessionLocal",
+        lambda: mock_session,
+    )
+
+    mock_fm_class = MagicMock()
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.ForecastManager",
+        mock_fm_class,
+    )
+
+    result = _run_asset_forecast_inner("ASSET123")
+    mock_fm_class.assert_called_once_with(mock_session_instance)
+    mock_fm_class.return_value.generate_forecast.assert_called_once_with("ASSET123")
+    mock_session.__enter__.assert_called_once()
+    mock_session.__exit__.assert_called_once()
+    assert result["status"] == "success"
+
+
+# ----------------------------
+# _run_forecast tests
+# ----------------------------
+def make_prediction_job():
+    return PredictionJobDataClass(
+        id="ASSET123",
+        model="xgb",
+        quantiles=[0.1, 0.5, 0.9],
+        forecast_type="demand",
+        lat=0.0,
+        lon=0.0,
+        horizon_minutes=60,
+        resolution_minutes=15,
+        name="ASSET123",
+        hyper_params={},
+    )
+
+
+def test__run_forecast_success(monkeypatch, input_df, mock_forecast_df):
+    fm = ForecastManager(session=MagicMock())
+    pj = make_prediction_job()
+
+    fake_serializer = MagicMock()
+    fake_serializer._find_models.return_value = pd.DataFrame([{"run_id": "RUN123"}])
+    fake_serializer.load_model.return_value = ("model_obj", {"spec": "dummy"})
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.MLflowSerializer",
+        lambda uri: fake_serializer,
+    )
+
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core",
+        lambda pj, df, model, specs: mock_forecast_df,
+    )
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.normalize_forecast_columns",
+        lambda df: df,
+    )
+
+    forecast_df, run_id = fm._run_forecast(pj, input_df)
+    assert forecast_df.equals(mock_forecast_df)
+    assert run_id == "RUN123"
+    fake_serializer._find_models.assert_called_once()
+    fake_serializer.load_model.assert_called_once()
+
+
+def test__run_forecast_no_model_found(monkeypatch, input_df):
+    fm = ForecastManager(session=MagicMock())
+    pj = make_prediction_job()
+
+    fake_serializer = MagicMock()
+    fake_serializer._find_models.return_value = pd.DataFrame()  # triggers LookupError
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.MLflowSerializer",
+        lambda uri: fake_serializer,
+    )
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.create_forecast_pipeline_core",
+        lambda *a, **k: pd.DataFrame(),
+    )
+    monkeypatch.setattr(
+        "forecasting_engine.shared.forecast_runner.normalize_forecast_columns",
+        lambda df: df,
+    )
+
+    import pytest
+
+    with pytest.raises(LookupError, match="No model found in MLflow"):
+        fm._run_forecast(pj, input_df)

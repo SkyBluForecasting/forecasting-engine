@@ -11,12 +11,12 @@ forecasting_engine/  # Included in deployments
 ├── services/         # Long-running services (Dockerized)
 │   ├── forecast_enqueuer/  # Checks DB, enqueues SQS forecast requests
 │   ├── forecast_poller/    # Polls SQS and runs forecasts
-│   └── model_trainer/      # Trains models with MLflow + S3
+│   └── model_trainer/      # Trains MLFLow models
 ├── shared/           # Reusable business logic and utilities
 │   ├── forecast_runner.py  # Core forecast generation
 │   ├── forecast_utils.py   # Forecast data helpers
 │   ├── logger_factory.py   # Logging setup
-│   └── s3_utils.py         # S3 utilities
+│   ├── model_trainer.py    # Core model training
 ├── tasks/            # CLI entrypoints
 scripts/              # Local testing helpers (not deployed)
 test/                 # Unit/integration tests (not deployed)
@@ -25,7 +25,7 @@ test/                 # Unit/integration tests (not deployed)
 ## Prerequisites
 
 - Python 3.11 or higher
-- AWS credentials configured (for S3 access)
+- AWS credentials configured
 - pip (Python package manager)
 - Docker (optional, for containerized deployment)
 
@@ -62,7 +62,6 @@ pip install -e .
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_REGION=us-east-2
-S3_BUCKET=top-level-bucket-name (e.g., forecasting-forecasts)
 
 # MLFLOW Config
 MLFLOW_TRACKING_URI=http://127.0.0.1:5050  # Localhost
@@ -136,7 +135,7 @@ pytest test
 To run tests and also check coverage:
 
 ```bash
-coverage run --source=forecasting_engine -m pytest test/orchestration/ && coverage report -m
+coverage run --source=forecasting_engine -m pytest test/ && coverage report -m
 ```
 
 ## Setting up pre-commit
