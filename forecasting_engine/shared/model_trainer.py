@@ -1,4 +1,6 @@
 import pandas as pd
+import contextlib
+import io
 from typing import Optional
 from forecasting_engine.openstef.pipeline.train_model import train_model_pipeline
 from forecasting_engine.openstef.data_classes.prediction_job import (
@@ -80,13 +82,16 @@ class TrainingManager:
         job = self._build_prediction_job(asset_id)
 
         try:
-            train_model_pipeline(
-                job,
-                train_df,
-                check_old_model_age=False,
-                mlflow_tracking_uri=MLFLOW_TRACKING_URI,
-                artifact_folder=None,
-            )
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                io.StringIO()
+            ):
+                train_model_pipeline(
+                    job,
+                    train_df,
+                    check_old_model_age=False,
+                    mlflow_tracking_uri=MLFLOW_TRACKING_URI,
+                    artifact_folder=None,
+                )
         except LookupError as e:
             logger.error(f"No model found in MLflow for asset {asset_id}: {e}")
             raise
@@ -100,11 +105,27 @@ class TrainingManager:
         assets = self.assets_io.list_assets()
         total = len(assets)
 
+        success_count = 0
+        failure_count = 0
+        failed_assets = []
+
         for i, asset in enumerate(assets, start=1):
             logger.info(
                 f"[{i}/{total}] Training asset {asset.asset_uuid} ...", flush=True
             )
             try:
                 self.train_asset(asset.asset_uuid)
+                success_count += 1
             except Exception as e:
+                failure_count += 1
+                failed_assets.append(asset.asset_uuid)
                 logger.exception(f"Training failed for asset {asset.asset_uuid}: {e}")
+
+        logger.info(
+            f"Training complete. "
+            f"✅ Successful: {success_count}/{total}, "
+            f"❌ Failed: {failure_count}/{total}"
+        )
+
+        if failed_assets:
+            logger.warning(f"Failed assets: {', '.join(failed_assets)}")
