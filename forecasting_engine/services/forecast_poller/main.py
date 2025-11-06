@@ -1,15 +1,12 @@
 import argparse
 import time
-import logging
+from forecasting_engine.shared.logger_factory import get_logger
 from forecasting_engine.services.forecast_poller.consumer import (
     process_measurement_queue_message,
 )
 from forecasting_engine.config import SQS_CLIENT, QUEUE_URL
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logger = get_logger(__name__)
 
 
 def poll_sqs():

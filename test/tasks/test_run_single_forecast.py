@@ -20,7 +20,7 @@ from forecasting_engine.tasks.run_single_forecast import run_asset_forecast, mai
 def test_run_asset_forecast_cases(side_effect, expected_status, expected_msg):
     # Patch ForecastManager.generate_forecast to simulate success or raise exceptions
     with patch(
-        "forecasting_engine.tasks.run_single_forecast.ForecastManager.generate_forecast"
+        "forecasting_engine.shared.forecast_runner.ForecastManager.generate_forecast"
     ) as mock_generate:
         if side_effect is None:
             mock_generate.return_value = None
@@ -57,7 +57,7 @@ def test_main_exit_codes(monkeypatch, status, expected_exit_code):
 
     fake_result = {"asset_id": "ASSET123", "status": status, "message": None}
 
-    # Patch run_asset_forecast to return a fake result dict
+    # Patch run_asset_forecast in the namespace where main() uses it
     with patch(
         "forecasting_engine.tasks.run_single_forecast.run_asset_forecast",
         return_value=fake_result,

@@ -1,5 +1,5 @@
 import json
-from forecasting_engine.tasks.run_single_forecast import run_asset_forecast
+from forecasting_engine.shared.forecast_runner import run_asset_forecast
 from forecasting_engine.config import SQS_CLIENT, QUEUE_URL
 from forecasting_engine.shared.logger_factory import get_logger
 

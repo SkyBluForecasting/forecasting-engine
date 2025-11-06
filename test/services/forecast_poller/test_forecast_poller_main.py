@@ -8,7 +8,7 @@ import forecasting_engine.services.forecast_poller.main as poller
 # ----------------------------
 class TestPollSQS:
 
-    def test_poll_sqs_with_messages(self, monkeypatch, caplog):
+    def test_poll_sqs_with_messages(self, monkeypatch, capsys):
         # Fake SQS client returning 2 messages
         fake_sqs = Mock()
         fake_sqs.receive_message.return_value = {
@@ -22,37 +22,40 @@ class TestPollSQS:
 
         monkeypatch.setattr(poller, "process_measurement_queue_message", fake_process)
 
-        with caplog.at_level("WARNING"):
-            result = poller.poll_sqs()
+        result = poller.poll_sqs()
+        captured = capsys.readouterr()  # capture stdout
 
         assert result == 2
-        assert any(
-            "Message was not processed successfully, leaving in queue." in m
-            for m in caplog.messages
+        assert (
+            "Message was not processed successfully, leaving in queue." in captured.out
         )
 
-    def test_poll_sqs_no_messages(self, monkeypatch):
+    def test_poll_sqs_raises_exception(self, monkeypatch, capsys):
         fake_sqs = Mock()
-        fake_sqs.receive_message.return_value = {}
+        fake_sqs.receive_message.side_effect = RuntimeError("SQS failure")
         monkeypatch.setattr(poller, "SQS_CLIENT", fake_sqs)
 
+        result = poller.poll_sqs()
+        captured = capsys.readouterr()
+
+        assert result == 0
+        assert "Error polling SQS: SQS failure" in captured.out
+
+    def test_poll_sqs_no_messages(self, monkeypatch):
+        # Create a fake SQS client that returns no messages
+        fake_sqs = Mock()
+        fake_sqs.receive_message.return_value = {"Messages": []}
+
+        # Patch the SQS_CLIENT in the module
+        monkeypatch.setattr(poller, "SQS_CLIENT", fake_sqs)
+
+        # Patch the processor to do nothing (just to be safe)
         monkeypatch.setattr(
             poller, "process_measurement_queue_message", lambda msg: True
         )
 
         result = poller.poll_sqs()
         assert result == 0
-
-    def test_poll_sqs_raises_exception(self, monkeypatch, caplog):
-        fake_sqs = Mock()
-        fake_sqs.receive_message.side_effect = RuntimeError("SQS failure")
-        monkeypatch.setattr(poller, "SQS_CLIENT", fake_sqs)
-
-        with caplog.at_level("ERROR"):
-            result = poller.poll_sqs()
-
-        assert result == 0
-        assert any("Error polling SQS: SQS failure" in msg for msg in caplog.messages)
 
 
 # ----------------------------
