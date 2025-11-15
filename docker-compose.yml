@@ -20,6 +20,7 @@ services:
       --host 0.0.0.0
       --port 5050
       --workers 1
+    restart: always
 
   forecasting:  # Just a dev container
     image: forecasting-base:latest
@@ -29,7 +30,8 @@ services:
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
-    command: tail -f /dev/null  
+    command: tail -f /dev/null
+    restart: always 
 
   forecast-poller:
     image: forecasting-base:latest
@@ -40,6 +42,7 @@ services:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
     command: python -m forecasting_engine.services.forecast_poller.main
+    restart: always
 
 
   forecast-enqueuer:
@@ -51,6 +54,7 @@ services:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
     command: python -m forecasting_engine.services.forecast_enqueuer.main
+    restart: always
 
   model-trainer: # Service that trains the models every Sunday at 1am UTC (8pm EST)
     image: forecasting-base:latest
@@ -63,6 +67,7 @@ services:
     command: >
       sh -c "echo '0 1 * * 0 python -m forecasting_engine.services.model_trainer.main' > /crontab &&
              supercronic /crontab"
+    restart: always
 
   cleanup:  # Service that cleans up old logs and containers once per day
     image: forecasting-base:latest
@@ -75,3 +80,4 @@ services:
     command: >
       sh -c "echo '0 0 * * * /usr/local/bin/cleanup.sh' > /crontab &&
              supercronic /crontab"
+    restart: always
