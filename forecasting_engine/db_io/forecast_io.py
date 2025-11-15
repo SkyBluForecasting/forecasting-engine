@@ -72,9 +72,14 @@ class ForecastIO(BaseIO):
                     {
                         "timestamp": r.timestamp,
                         "forecast": r.forecast_value,
-                        "lower_q": r.lower_q,
-                        "upper_q": r.upper_q,
-                        "description": getattr(r, "description", None),
+                        "p05": r.p05,
+                        "p10": r.p10,
+                        "p30": r.p30,
+                        "p50": r.p50,
+                        "p70": r.p70,
+                        "p90": r.p90,
+                        "p95": r.p95,
+                        "description": r.description,
                     }
                     for r in rows
                 ]
