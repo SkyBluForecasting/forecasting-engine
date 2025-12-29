@@ -76,8 +76,15 @@ services:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
+      - /tmp:/tmp                # mount host /tmp
+      - /var/log:/var/log        # mount host logs
+      - /var/run/docker.sock:/var/run/docker.sock  # allow Docker cleanup
     working_dir: /app
     command: >
-      sh -c "echo '0 0 * * * /usr/local/bin/cleanup.sh' > /crontab &&
-             supercronic /crontab"
+      sh -c "
+        echo 'Running cleanup at container start...';
+        /usr/local/bin/cleanup.sh;
+        echo '0 2 * * * /usr/local/bin/cleanup.sh' > /crontab;
+        supercronic /crontab
+      "
     restart: always
