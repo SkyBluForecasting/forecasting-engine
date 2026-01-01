@@ -14,11 +14,11 @@ certificates/
 ktprognoses.egg-info/
 .idea/
 .vscode/
-test/component/mlruns
-test/component/307
-test/openstef/trained_models/307
-test/openstef/trained_models/mlruns/*
-!test/openstef/trained_models/mlruns/893156335105023143/
+test/unit/component/mlruns
+test/unit/component/307
+test/unit/openstef/trained_models/307
+test/unit/openstef/trained_models/mlruns/*
+!test/unit/openstef/trained_models/mlruns/893156335105023143/
 mlflow_artifacts/
 mlflow_trained_models/
 virtualenv/

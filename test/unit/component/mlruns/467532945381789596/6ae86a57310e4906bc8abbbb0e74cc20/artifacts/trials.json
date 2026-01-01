@@ -1,0 +1,28 @@
+{
+  " trial: 0": {
+    "score": 1.9645226144890973,
+    "params": {
+      "colsample_bytree": 1,
+      "learning_rate": 0.3,
+      "max_delta_step": 0,
+      "max_depth": 6,
+      "min_child_weight": 1,
+      "subsample": 1.0,
+      "gamma": 0.0,
+      "booster": "gbtree"
+    }
+  },
+  " trial: 1": {
+    "score": 2.074643038280672,
+    "params": {
+      "colsample_bytree": 0.8796179466277471,
+      "learning_rate": 0.4214019627829933,
+      "max_delta_step": 5,
+      "max_depth": 6,
+      "min_child_weight": 7,
+      "subsample": 0.6972216047830697,
+      "gamma": 0.028340341105833833,
+      "booster": "gbtree"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+artifact_uri: /Users/mfavit/forecasting-engine/test/openstef/unit/trained_models/mlruns/0/cf29f066204143658bc7d01315ffef9e/artifacts
+end_time: 1767291179373
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: cf29f066204143658bc7d01315ffef9e
+run_name: Default
+run_uuid: cf29f066204143658bc7d01315ffef9e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1767291179356
+status: 3
+tags: []
+user_id: mfavit
