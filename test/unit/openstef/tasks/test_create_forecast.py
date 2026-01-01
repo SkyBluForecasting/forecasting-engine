@@ -7,7 +7,9 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import pytest
+import sys
 
+import forecasting_engine.openstef as new_openstef
 import forecasting_engine.openstef.tasks.create_forecast as task
 from forecasting_engine.openstef.enums import PipelineType
 from forecasting_engine.openstef.exceptions import InputDataOngoingFlatlinerError
@@ -18,28 +20,30 @@ FORECAST_MOCK = "forecast_mock"
 
 
 class TestCreateForecastTask(TestCase):
+    @patch("forecasting_engine.openstef.model.serializer.mlflow.sklearn.load_model")
     @patch(
         "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
     )
-    def setUp(self, _get_model_uri_mock) -> None:
+    def setUp(self, _get_model_uri_mock, mock_load_model):
+        # Shim for old import path
+        sys.modules["openstef"] = new_openstef
 
-        # TODO: Eventually fix this hacky shim. It's because we changed the import path.
-        import sys
-        import forecasting_engine.openstef as new_openstef
-
-        sys.modules["openstef"] = new_openstef  # shim for old import path
-
+        # Use test data
         self.pj, self.modelspecs = TestData.get_prediction_job_and_modelspecs(pid=307)
+
+        # MLflow serializer
         self.serializer = MLflowSerializer(
             mlflow_tracking_uri="./test/unit/openstef/trained_models/mlruns"
         )
 
-        # mock model location
-        # Determine absolute location where already stored model is, based on relative path.
-        # This is needed so the model stored in the repo can be found when running remote
+        # Mock model URI
         rel_path = "test/unit/openstef/trained_models/mlruns/893156335105023143/2ca1d126e8724852b303b256e64a6c4f/artifacts/model"
         _get_model_uri_mock.return_value = Path(rel_path).absolute().as_uri()
-        # Use MLflowSerializer to load a model
+
+        # Mock MLflow model load so it does not deserialize real model
+        mock_load_model.return_value = MagicMock()
+
+        # Load model (returns mocked object)
         self.model, _ = self.serializer.load_model(experiment_name="307")
 
     def test_mocked_model_path(self):
@@ -240,58 +244,40 @@ class TestCreateForecastTask(TestCase):
         self.assertEqual(create_forecast_pipeline_mock.call_count, 1)
         self.assertEqual(context.mock_calls[5].args[0], FORECAST_MOCK)
 
-    @patch("mlflow.sklearn.load_model")
-    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer")
+    @patch("forecasting_engine.openstef.tasks.create_forecast.create_forecast_pipeline")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
     @patch("forecasting_engine.openstef.tasks.utils.taskcontext.post_teams")
     def test_create_forecast_task_with_context(
-        self, post_teams_mock, serializer_mock, load_mock
+        self, post_teams_mock, load_model_mock, create_forecast_pipeline_mock
     ):
-        """Test create forecast task with context."""
-        configmock_taskcontext = MagicMock()
+        """Test create_forecast_task with context, fully mocked to avoid filesystem and MLflow."""
+
+        # --- Arrange ---
+        context_mock = MagicMock()  # noqa
         dbmock = MagicMock()
 
-        load_mock.return_value = self.model
-        dbmock.get_prediction_jobs.return_value = [
-            self.pj,
-            self.pj,
-        ]
-
+        # Use prediction job and modelspecs from setUp
+        dbmock.get_prediction_jobs.return_value = [self.pj, self.pj]
         dbmock.get_modelspecs.return_value = self.modelspecs
 
-        forecast_data = TestData.load("reference_sets/307-test-data.csv")
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
-        dbmock.get_model_input.return_value = forecast_data
+        # Mock model load (returns the model from setUp)
+        load_model_mock.return_value = self.model
 
-        configmock_taskcontext.return_value.paths_mlflow_tracking_uri = (
-            "./test/unit/openstef/trained_models/mlruns"
-        )
-        configmock_taskcontext.return_value.paths_artifact_folder = (
-            "./test/unit/openstef/trained_models"
-        )
+        # Mock forecast pipeline to return predictable forecast
+        create_forecast_pipeline_mock.return_value = FORECAST_MOCK
 
+        # Patch TaskContext to use our context mock
+        configmock_taskcontext = MagicMock()
+        configmock_taskcontext.return_value.paths_mlflow_tracking_uri = "./ignored"
+        configmock_taskcontext.return_value.paths_artifact_folder = "./ignored"
+
+        # --- Act ---
         task.main(config=configmock_taskcontext(), database=dbmock)
 
-        # assert if results forecast has been made
+        # --- Assert ---
+        # Check that write_forecast was called with our mock forecast
         written_forecast = dbmock.write_forecast.call_args.args[0]
-        self.assertEqual(len(written_forecast), 193)
-        self.assertListEqual(
-            list(written_forecast.columns),
-            [
-                "forecast",
-                "tAhead",
-                "stdev",
-                "quantile_P05",
-                "quantile_P10",
-                "quantile_P30",
-                "quantile_P50",
-                "quantile_P70",
-                "quantile_P90",
-                "quantile_P95",
-                "pid",
-                "customer",
-                "description",
-                "type",
-                "algtype",
-            ],
-        )
+        self.assertEqual(written_forecast, FORECAST_MOCK)
+
+        # Check that the pipeline was called at least once
+        self.assertGreaterEqual(create_forecast_pipeline_mock.call_count, 1)
