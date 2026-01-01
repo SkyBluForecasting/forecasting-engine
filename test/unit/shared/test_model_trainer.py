@@ -159,6 +159,29 @@ class TestTrainAsset:
 
 
 # ----------------------------
+# Test train_asset when asset is skipped
+# ----------------------------
+
+
+class TestTrainAssetSkipped:
+    def test_skipped_asset_logs_info(self, trainer):
+        asset_id = "A"
+
+        # Patch _is_valid_asset_to_train to return False
+        with patch.object(
+            TrainingManager, "_is_valid_asset_to_train", return_value=False
+        ):
+            # Patch logger.info to capture logs
+            with patch.object(mt.logger, "info") as mock_log_info:
+                trainer.train_asset(asset_id)
+
+        # Assert the skip log was called
+        mock_log_info.assert_any_call(
+            f"Skipping training for asset {asset_id} (not eligible)"
+        )
+
+
+# ----------------------------
 # Test train_all_assets
 # ----------------------------
 
