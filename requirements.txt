@@ -28,4 +28,4 @@ sqlalchemy
 aiosqlite
 
 # Internal Packages
-forecasting-db==2.0.0
+forecasting-db==2.2.0

@@ -51,6 +51,24 @@ class TrainingManager:
             )
         return df.iloc[:-test_len]
 
+    def _is_valid_asset_to_train(self, asset) -> bool:
+        """
+        Determine if the asset is eligible for training.
+
+        Rules:
+        1. If measured = False, return False.
+        2. If measured = True and has children, return False (TODO future: could train with child data).
+        3. If measured = True and has no children, return True.
+        """
+
+        if not asset.measured:
+            return False
+
+        if asset.children:
+            return False
+
+        return True
+
     def _build_prediction_job(
         self, asset_id: str, model_id: Optional[str] = None
     ) -> PredictionJobDataClass:
@@ -71,6 +89,11 @@ class TrainingManager:
         )
 
     def train_asset(self, asset_id: str):
+        asset = self.assets_io.get_asset(asset_id)  # load asset from DB
+        if not self._is_valid_asset_to_train(asset):
+            logger.info(f"Skipping training for asset {asset_id} (not eligible)")
+            return
+
         df = self.measurements_io.to_df(asset_id)
         if df.empty:
             raise ValueError(f"No measurements found for asset {asset_id}")
@@ -107,6 +130,7 @@ class TrainingManager:
 
         success_count = 0
         failure_count = 0
+        skipped_assets = []
         failed_assets = []
 
         for i, asset in enumerate(assets, start=1):
@@ -114,6 +138,13 @@ class TrainingManager:
                 f"[{i}/{total}] Training asset {asset.asset_uuid} ...", flush=True
             )
             try:
+                if not self._is_valid_asset_to_train(asset):
+                    skipped_assets.append(asset.asset_uuid)
+                    logger.info(
+                        f"Skipping training for asset {asset.asset_uuid} (not eligible)"
+                    )
+                    continue
+
                 self.train_asset(asset.asset_uuid)
                 success_count += 1
             except Exception as e:
@@ -124,8 +155,6 @@ class TrainingManager:
         logger.info(
             f"Training complete. "
             f"✅ Successful: {success_count}/{total}, "
-            f"❌ Failed: {failure_count}/{total}"
+            f"❌ Failed: {failure_count}/{total}, "
+            f"⏭ Skipped: {len(skipped_assets)}/{total}"
         )
-
-        if failed_assets:
-            logger.warning(f"Failed assets: {', '.join(failed_assets)}")

@@ -46,7 +46,6 @@ def trainer(mock_session):
 
 class TestSliceTrainData:
     def test_slices_correctly(self, trainer):
-        # Must have >= test_len rows
         test_len = int(HORIZON_MIN // RES_MIN)
         df = pd.DataFrame({"load": range(test_len + 10)})
         result = trainer._slice_train_data(df)
@@ -82,13 +81,34 @@ class TestPrepareTrainDf:
 
 
 # ----------------------------
+# Test _is_valid_asset_to_train
+# ----------------------------
+
+
+class TestIsValidAssetToTrain:
+    def test_measured_false_returns_false(self, trainer):
+        asset = MagicMock(measured=False, children=[])
+        assert trainer._is_valid_asset_to_train(asset) is False
+
+    def test_measured_true_with_children_returns_false(self, trainer):
+        child = MagicMock()
+        asset = MagicMock(measured=True, children=[child])
+        assert trainer._is_valid_asset_to_train(asset) is False
+
+    def test_measured_true_no_children_returns_true(self, trainer):
+        asset = MagicMock(measured=True, children=[])
+        assert trainer._is_valid_asset_to_train(asset) is True
+
+
+# ----------------------------
 # Test train_asset
 # ----------------------------
 
 
 class TestTrainAsset:
     @patch("forecasting_engine.shared.model_trainer.train_model_pipeline")
-    def test_successful_training(self, mock_train, trainer):
+    @patch.object(TrainingManager, "_is_valid_asset_to_train", return_value=True)
+    def test_successful_training(self, mock_valid, mock_train, trainer):
         df = pd.DataFrame(
             {
                 "timestamp": pd.date_range("2024-01-01", periods=300, freq="h"),
@@ -102,7 +122,8 @@ class TestTrainAsset:
         mock_train.assert_called_once()
 
     @patch("forecasting_engine.shared.model_trainer.train_model_pipeline")
-    def test_lookup_error(self, mock_train, trainer):
+    @patch.object(TrainingManager, "_is_valid_asset_to_train", return_value=True)
+    def test_lookup_error(self, mock_valid, mock_train, trainer):
         mock_train.side_effect = LookupError("model missing")
         df = pd.DataFrame(
             {
@@ -116,7 +137,8 @@ class TestTrainAsset:
             trainer.train_asset("A")
 
     @patch("forecasting_engine.shared.model_trainer.train_model_pipeline")
-    def test_other_error(self, mock_train, trainer):
+    @patch.object(TrainingManager, "_is_valid_asset_to_train", return_value=True)
+    def test_other_error(self, mock_valid, mock_train, trainer):
         mock_train.side_effect = Exception("generic fail")
         df = pd.DataFrame(
             {
@@ -129,7 +151,8 @@ class TestTrainAsset:
         with pytest.raises(Exception):
             trainer.train_asset("A")
 
-    def test_no_measurements(self, trainer):
+    @patch.object(TrainingManager, "_is_valid_asset_to_train", return_value=True)
+    def test_no_measurements(self, mock_valid, trainer):
         trainer.measurements_io.to_df.return_value = pd.DataFrame()
         with pytest.raises(ValueError):
             trainer.train_asset("A")
@@ -143,18 +166,27 @@ class TestTrainAsset:
 class TestTrainAllAssets:
 
     @patch("forecasting_engine.shared.model_trainer.TrainingManager.train_asset")
-    def test_trains_multiple_assets(self, mock_train_asset, trainer):
-        mock_assets = [MagicMock(asset_uuid="A"), MagicMock(asset_uuid="B")]
-        trainer.assets_io.list_assets.return_value = mock_assets
-        trainer.train_all_assets()
+    def test_trains_multiple_assets_only_valid(self, mock_train_asset, trainer):
+        asset1 = MagicMock(asset_uuid="A", measured=True, children=[])
+        asset2 = MagicMock(asset_uuid="B", measured=False, children=[])
+        asset3 = MagicMock(asset_uuid="C", measured=True, children=[MagicMock()])
 
-        mock_train_asset.assert_any_call("A")
-        mock_train_asset.assert_any_call("B")
-        assert mock_train_asset.call_count == 2
+        trainer.assets_io.list_assets.return_value = [asset1, asset2, asset3]
+
+        with patch.object(mt.logger, "info") as mock_log_info:
+            trainer.train_all_assets()
+
+        # Only the valid asset (asset1) should have train_asset called
+        mock_train_asset.assert_called_once_with("A")
+
+        # Check that skipped assets are logged
+        log_messages = [args[0] for args, kwargs in mock_log_info.call_args_list]
+        assert any("Skipping training for asset B" in msg for msg in log_messages)
+        assert any("Skipping training for asset C" in msg for msg in log_messages)
 
     def test_train_all_assets_logs_exception(self, trainer):
         # Simulate one asset that fails training
-        failing_asset = MagicMock(asset_uuid="A")
+        failing_asset = MagicMock(asset_uuid="A", measured=True, children=[])
         trainer.assets_io.list_assets.return_value = [failing_asset]
 
         with patch.object(mt.logger, "exception") as mock_log:
@@ -167,6 +199,5 @@ class TestTrainAllAssets:
             # Ensure logger.exception was called
             mock_log.assert_called()
             args, kwargs = mock_log.call_args
-            # The log message should contain asset id and the exception message
             assert "A" in args[0]
             assert "fail for A" in args[0]
