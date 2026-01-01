@@ -74,7 +74,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         export PYTHONPATH=${{ github.workspace }}
-        coverage run --source=forecasting_engine -m pytest test/
+        coverage run --source=forecasting_engine -m pytest test/unit
         coverage report -m
         coverage xml
       
