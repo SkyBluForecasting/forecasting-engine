@@ -24,7 +24,6 @@ def main(
     session = session_cls()
 
     trainer = trainer_cls(session)
-    print("hi")
 
     try:
         run_training(trainer, args.asset_id)
