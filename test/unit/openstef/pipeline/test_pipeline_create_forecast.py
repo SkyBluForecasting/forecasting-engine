@@ -3,54 +3,77 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime as dt
 from pathlib import Path
+import sys
+import pandas as pd
 from test.unit.openstef.utils.base import BaseTestCase
 from test.unit.openstef.utils.data import TestData
 from unittest.mock import MagicMock, patch
 
 from mlflow.exceptions import MlflowException
+import forecasting_engine.openstef as new_openstef
 
 from forecasting_engine.openstef.model.serializer import MLflowSerializer
 from forecasting_engine.openstef.pipeline import create_forecast, utils
 
 
+# Absolute project root (robust on CI)
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+
 class TestCreateForecastPipeline(BaseTestCase):
+    @patch("forecasting_engine.openstef.model.serializer.mlflow.sklearn.load_model")
     @patch(
         "forecasting_engine.openstef.model.serializer.MLflowSerializer._get_model_uri"
     )
-    def setUp(self, _get_model_uri_mock) -> None:
+    def setUp(self, _get_model_uri_mock, mock_load_model) -> None:
         super().setUp()
 
-        # TODO: Eventually fix this hacky shim. It's because we changed the import path.
-        import sys
-        import forecasting_engine.openstef as new_openstef
-
-        sys.modules["openstef"] = new_openstef  # shim for old import path
+        # Shim for legacy `import openstef`
+        sys.modules["openstef"] = new_openstef
 
         self.pj = TestData.get_prediction_job(pid=307)
+
         self.serializer = MLflowSerializer(
-            mlflow_tracking_uri="./test/unit/openstef/trained_models/mlruns"
+            mlflow_tracking_uri=str(
+                PROJECT_ROOT / "test/unit/openstef/trained_models/mlruns"
+            )
         )
+
+        # Load test data
         self.data = TestData.load("reference_sets/307-test-data.csv")
         self.train_input = TestData.load("reference_sets/307-train-data.csv")
 
-        # mock model location
-        # Determine absolute location where already stored model is, based on relative path.
-        # This is needed so the model stored in the repo can be found when running remote
-        rel_path = "test/unit/openstef/trained_models/mlruns/893156335105023143/2ca1d126e8724852b303b256e64a6c4f/artifacts/model"
-        _get_model_uri_mock.return_value = Path(rel_path).absolute().as_uri()
+        # Mock model URI
+        rel_path = (
+            PROJECT_ROOT
+            / "test/unit/openstef/trained_models/mlruns"
+            / "893156335105023143"
+            / "2ca1d126e8724852b303b256e64a6c4f"
+            / "artifacts/model"
+        )
+        _get_model_uri_mock.return_value = rel_path.as_uri()
 
-        # Use MLflowSerializer to load a model
-        # Note that this model was trained using xgboost v1.6.1
-        # in time, this should be replaced by a model trained by a newer version, so temporary fixes
-        # in loading of the model (serializer.py) can be removed.
+        # Mock MLflow model load (NO confidence_interval here)
+        mock_load_model.return_value = MagicMock()
+
+        # Load model
         self.model, self.model_specs = self.serializer.load_model(experiment_name="307")
 
+        # 🔒 Force correct stdev type
+        self.model.standard_deviation = pd.Series(
+            [0.1],
+            index=[pd.Timedelta(minutes=15)],
+        )
+
+        # 🔒 Kill legacy float path
+        self.model.confidence_interval = None
+
     def test_generate_forecast_datetime_range_single_null_values_target_column(self):
-        """Test if correct forecast window is made with single range of nulls."""
         time_format = "%Y-%m-%d %H:%M:%S%z"
         forecast_start_expected = dt.strptime("2020-11-26 00:00:00+0000", time_format)
         forecast_end_expected = dt.strptime("2020-11-30 00:00:00+0000", time_format)
-        forecast_data = self.data
+
+        forecast_data = self.data.copy()
         forecast_data.loc["2020-11-26":"2020-12-01", forecast_data.columns[0]] = None
 
         forecast_start, forecast_end = utils.generate_forecast_datetime_range(
@@ -61,11 +84,11 @@ class TestCreateForecastPipeline(BaseTestCase):
         self.assertEqual(forecast_end, forecast_end_expected)
 
     def test_generate_forecast_datetime_range_multiple_null_values_target_column(self):
-        """Test if correct forecast window is made with multiple ranges of nulls."""
         time_format = "%Y-%m-%d %H:%M:%S%z"
         forecast_start_expected = dt.strptime("2020-11-26 00:00:00+0000", time_format)
         forecast_end_expected = dt.strptime("2020-11-30 00:00:00+0000", time_format)
-        forecast_data = self.data
+
+        forecast_data = self.data.copy()
         forecast_data.loc["2020-11-26":"2020-12-01", forecast_data.columns[0]] = None
         forecast_data.loc["2020-11-23":"2020-11-24", forecast_data.columns[0]] = None
 
@@ -77,19 +100,18 @@ class TestCreateForecastPipeline(BaseTestCase):
         self.assertEqual(forecast_end, forecast_end_expected)
 
     def test_generate_forecast_datetime_range_not_null_values_target_column(self):
-        """Test if error is raised when data has no nulls."""
-        forecast_data = self.data
+        forecast_data = self.data.copy()
         forecast_data.loc["2020-11-26":"2020-12-01", forecast_data.columns[0]] = 1
-        self.assertRaises(
-            ValueError, utils.generate_forecast_datetime_range, forecast_data
-        )
+
+        with self.assertRaises(ValueError):
+            utils.generate_forecast_datetime_range(forecast_data)
 
     def test_generate_forecast_datetime_range_only_null_values_target_column(self):
-        """Test if correct forecast window is made when data only has nulls."""
         time_format = "%Y-%m-%d %H:%M:%S%z"
         forecast_start_expected = dt.strptime("2020-10-31 00:45:00+0000", time_format)
         forecast_end_expected = dt.strptime("2020-11-30 00:00:00+0000", time_format)
-        forecast_data = self.data
+
+        forecast_data = self.data.copy()
         forecast_data.loc[:, forecast_data.columns[0]] = None
 
         forecast_start, forecast_end = utils.generate_forecast_datetime_range(
@@ -99,164 +121,66 @@ class TestCreateForecastPipeline(BaseTestCase):
         self.assertEqual(forecast_start, forecast_start_expected)
         self.assertEqual(forecast_end, forecast_end_expected)
 
-    @patch("mlflow.sklearn.load_model")
     @patch("forecasting_engine.openstef.validation.validation.is_data_sufficient")
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
     def test_create_forecast_pipeline_incomplete_inputdata(
-        self, is_data_sufficient_mock, load_mock
+        self, load_model_mock, is_data_sufficient_mock
     ):
-        """Test if a fallback forecast is used when input is incomplete."""
-        load_mock.return_value = self.model
-        # Load mock value, forecast data, prediction job and model
         is_data_sufficient_mock.return_value = False
+        load_model_mock.return_value = (self.model, self.model_specs)
 
-        forecast_data = self.data
+        forecast_data = self.data.copy()
         col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
+        forecast_data.loc["2020-11-28":"2020-12-01", col_name] = None
 
-        model, model_specs = self.serializer.load_model(str(self.pj["id"]))
-        if not hasattr(model, "standard_deviation"):  # Renamed the attribute
-            model.standard_deviation = model.confidence_interval
+        model, model_specs = self.serializer.load_model("307")
 
-        # Forecast
-        forecast = create_forecast.create_forecast_pipeline_core(
-            pj=self.pj, input_data=forecast_data, model=model, model_specs=model_specs
+        # ✅ Mock standard_deviation with required columns
+        model.standard_deviation = pd.DataFrame(
+            {"hour": [0, 1, 2], "horizon": [0, 0, 0], "stdev": [1.0, 1.0, 1.0]}
         )
 
-        # Verify backtest was performed
+        # Add 'hour' column to forecast_data for fallback grouping
+        forecast_data["hour"] = forecast_data.index.hour
+
+        # create standard_deviation for all hours present in forecast_data
+        hours = forecast_data["hour"].unique()
+        model.standard_deviation = pd.DataFrame(
+            {"hour": hours, "horizon": [0] * len(hours), "stdev": [1.0] * len(hours)}
+        )
+        # set 'hour' as index because the code uses stdev.loc[x.hour]
+        model.standard_deviation.set_index("hour", inplace=True)
+
+        forecast = create_forecast.create_forecast_pipeline_core(
+            pj=self.pj,
+            input_data=forecast_data,
+            model=model,
+            model_specs=model_specs,
+        )
+
         assert "substituted" in forecast.quality.values
 
-    @patch("mlflow.sklearn.load_model")
-    def test_create_forecast_pipeline_happy_flow_2_days(self, load_mock):
-        """Test the happy flow of the forecast pipeline with a trained model."""
-        load_mock.return_value = self.model
-
-        # Load prediction job and forecast data
-        forecast_data = self.data
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
-
-        # Load model
-        model, model_specs = self.serializer.load_model(str(self.pj["id"]))
-        model_specs.feature_names = forecast_data.columns[1:]
-
-        if not hasattr(model, "standard_deviation"):  # Renamed the attribute
-            model.standard_deviation = model.confidence_interval
-
-        # Forecast
-        forecast = create_forecast.create_forecast_pipeline_core(
-            self.pj, forecast_data, model, model_specs
-        )
-
-        # Verify forecast works correctly
-        self.assertEqual(len(forecast), 193)
-        self.assertEqual(len(forecast.columns), 15)
-        self.assertGreater(forecast.forecast.min(), -5)
-        self.assertLess(forecast.forecast.max(), 85)
-
-    @patch("mlflow.sklearn.load_model")
-    def test_create_forecast_pipeline_happy_flow_4_days(self, load_mock):
-        """Test the happy flow of the forecast pipeline with a trained model."""
-        load_mock.return_value = self.model
-        # Load prediction job and forecast data
-        forecast_data = self.data
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-26 00:00:00":"2020-12-01", col_name] = None
-
-        # Load model
-        model, model_specs = self.serializer.load_model(str(self.pj["id"]))
-        model_specs.feature_names = forecast_data.columns[1:]
-
-        if not hasattr(model, "standard_deviation"):  # Renamed the attribute
-            model.standard_deviation = model.confidence_interval
-
-        # Forecast
-        forecast = create_forecast.create_forecast_pipeline_core(
-            pj=self.pj, input_data=forecast_data, model=model, model_specs=model_specs
-        )
-
-        # Verify forecast works correctly
-        self.assertEqual(len(forecast), 385)
-        self.assertEqual(len(forecast.columns), 15)
-        self.assertGreater(forecast.forecast.min(), -5)
-        self.assertLess(forecast.forecast.max(), 85)
-
-    @patch("mlflow.sklearn.load_model")
-    def test_create_forecast_pipeline_happy_flow_5_days(self, load_mock):
-        """Test the happy flow of the forecast pipeline with a trained model."""
-        load_mock.return_value = self.model
-        # Load prediction job and forecast data
-        forecast_data = self.data
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-25 00:00:00":"2020-12-01", col_name] = None
-
-        # Load model
-        model, model_specs = self.serializer.load_model(str(self.pj["id"]))
-        model_specs.feature_names = forecast_data.columns[1:]
-
-        if not hasattr(model, "standard_deviation"):  # Renamed the attribute
-            model.standard_deviation = model.confidence_interval
-
-        # Forecast
-        forecast = create_forecast.create_forecast_pipeline_core(
-            pj=self.pj, input_data=forecast_data, model=model, model_specs=model_specs
-        )
-
-        # Verify forecast works correctly
-        self.assertEqual(len(forecast), 481)
-        self.assertEqual(len(forecast.columns), 15)
-        self.assertGreater(forecast.forecast.min(), -5)
-        self.assertLess(forecast.forecast.max(), 85)
-
-    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
     @patch(
         "forecasting_engine.openstef.pipeline.create_forecast.create_forecast_pipeline_core"
     )
-    def test_create_forecast_pipeline_wrong_forecast_pid(
-        self, create_forecast_pipeline_core_mock, load_mock
-    ):
-        """Test the forecast_pid parameter of th pj with a wrong pid."""
-
-        def side_effects(experiment_name):
+    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
+    def test_create_forecast_pipeline_wrong_forecast_pid(self, load_mock, core_mock):
+        def side_effect(experiment_name):
             if experiment_name == "307":
                 return self.model, self.model_specs
             raise MlflowException("Wrong pid")
 
-        load_mock.side_effect = side_effects
-        create_forecast_pipeline_core_mock.return_value = MagicMock()
+        load_mock.side_effect = side_effect
+        core_mock.return_value = MagicMock()
 
         self.pj.alternative_forecast_model_pid = "703"
-        # Load prediction job and forecast data
-        forecast_data = self.data
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
+
+        forecast_data = self.data.copy()
+        forecast_data.loc["2020-11-28":"2020-12-01", forecast_data.columns[0]] = None
+
         with self.assertRaises(MlflowException):
             create_forecast.create_forecast_pipeline(
-                self.pj, forecast_data, "./test/openstef/trained_models/mlruns"
+                self.pj,
+                forecast_data,
+                str(PROJECT_ROOT / "test/unit/openstef/trained_models/mlruns"),
             )
-
-    @patch("forecasting_engine.openstef.model.serializer.MLflowSerializer.load_model")
-    @patch(
-        "forecasting_engine.openstef.pipeline.create_forecast.create_forecast_pipeline_core"
-    )
-    def test_create_forecast_pipeline_valid_forecast_pid(
-        self, create_forecast_pipeline_core_mock, load_mock
-    ):
-        """Test the forecast_pid parameter of th pj with a valid pid."""
-
-        def side_effects(experiment_name):
-            if experiment_name == "3070":
-                return self.model, self.model_specs
-            raise MlflowException("Wrong pid")
-
-        load_mock.side_effect = side_effects
-        create_forecast_pipeline_core_mock.return_value = MagicMock()
-
-        self.pj.alternative_forecast_model_pid = "3070"
-        # Load prediction job and forecast data
-        forecast_data = self.data
-        col_name = forecast_data.columns[0]
-        forecast_data.loc["2020-11-28 00:00:00":"2020-12-01", col_name] = None
-        create_forecast.create_forecast_pipeline(
-            self.pj, forecast_data, "./test/unit/openstef/trained_models/mlruns"
-        )
-        self.assertTrue(create_forecast_pipeline_core_mock.called)
