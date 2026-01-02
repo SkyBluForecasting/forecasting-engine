@@ -65,16 +65,16 @@ AWS_REGION=us-east-2
 
 # MLFLOW Config
 MLFLOW_TRACKING_URI=http://127.0.0.1:5050  # Localhost
-MLFLOW_DB_URI=get_from_supabase_session_pooler
-MLFLOW_ARTIFACT_ROOT=path-to-mlflow-s3-artifacts-folder
+MLFLOW_DB_URI="postgresql://postgres:localpass@localhost:5432/appdb?options=-csearch_path%3Dmlflow"  # Should match DATABASE_URL, but with mlflow schema specified
+MLFLOW_ARTIFACT_ROOT="path-to-mlflow-s3-artifacts-folder"  # Or just leave blank to store artifacts locally
 
 # Database Configuration
 DATABASE_URL="postgresql://postgres:localpass@localhost:5432/appdb"
 ```
 
-You may need to run `source .env` in order to set the variables in your virtual environment.
-
 ### Starting the mlflow server locally:
+
+Note: You need to run `source .env` in order to set the variables in your virtual environment.
 
 ```bash
 mlflow server --backend-store-uri $MLFLOW_DB_URI --default-artifact-root $MLFLOW_ARTIFACT_ROOT --host 127.0.0.1 --port 5050
@@ -101,7 +101,7 @@ export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token \
 
 3. Build and start all services:
 ```bash
-docker-compose -f docker-compose.dev.yml build --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN" \
+docker-compose -f docker-compose.yml build --build-arg CODEARTIFACT_AUTH_TOKEN="$CODEARTIFACT_AUTH_TOKEN" \
                      --build-arg AWS_REGION="$AWS_REGION"
 
 docker-compose -f docker-compose.dev.yml up -d
