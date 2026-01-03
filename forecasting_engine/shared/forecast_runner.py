@@ -17,7 +17,6 @@ from forecasting_engine.db_io.constraint_io import ConstraintsIO
 from forecasting_engine.db_io.session import SessionLocal
 from forecasting_engine.db_io.measurement_io import MeasurementsIO
 from forecasting_engine.db_io.forecast_run_io import ForecastRunIO
-from forecasting_engine.db_io.assets_io import AssetsIO
 from forecasting_engine.db_io.prediction_job_io import PredictionJobIO
 from forecasting_engine.shared.forecast_utils import (
     ForecastDataProcessor,
@@ -66,34 +65,22 @@ class ForecastManager:
         self.forecast_run_io = ForecastRunIO(session)
         self.forecast_io = ForecastIO(session)
         self.measurements_io = MeasurementsIO(session)
-        self.assets_io = AssetsIO(session)
 
     def generate_forecast(self, asset_id: str):
         start_time = time.time()
         logger.info(f"Starting forecast generation for asset: {asset_id}")
 
-        asset = self.assets_io.get_asset(asset_id)  # load asset from DB
+        measurements_df = self._load_measurements(asset_id)
+        pj = self._build_prediction_job(asset_id)
+        prepared_df = self._prepare_data(measurements_df, pj)
+        forecast_df, mlflow_run_id = self._run_forecast(pj, prepared_df)
+        self._save_forecast_results(forecast_df, pj, mlflow_run_id, asset_id)
 
-        # ----- LEAF NODE (MODEL-BASED FORECASTS) ------
-        if not asset.children:
-            if not asset.measured:
-                logger.info(
-                    f"Skipping forecast generation for leaf asset {asset_id}: measured=False"
-                )
-                return None
-
-            measurements_df = self._load_measurements(asset_id)
-            pj = self._build_prediction_job(asset_id)
-            prepared_df = self._prepare_data(measurements_df, pj)
-            forecast_df, mlflow_run_id = self._run_forecast(pj, prepared_df)
-            self._save_forecast_results(forecast_df, pj, mlflow_run_id, asset_id)
-            logger.info(
-                f"Finished model-based forecast for leaf asset {asset_id} "
-                f"in {time.time() - start_time:.2f}s"
-            )
-            return forecast_df
-
-        # ----- NON-LEAF NODE (AGGREGATION FORECASTS) ----
+        total_elapsed = time.time() - start_time
+        logger.info(
+            f"Total forecast generation time for asset {asset_id}: {total_elapsed:.2f}s"
+        )
+        return forecast_df
 
     def _load_measurements(self, asset_id: str):
         df = self.measurements_io.to_df(asset_id)
