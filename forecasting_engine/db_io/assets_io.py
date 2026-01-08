@@ -1,6 +1,6 @@
 from forecasting_db.models import Asset
 from .base_io import BaseIO
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from typing import List, Optional
 import pandas as pd
 
@@ -24,6 +24,23 @@ class AssetsIO(BaseIO):
         query = self.session.query(Asset)
         if asset_type:
             query = query.filter(Asset.asset_type == asset_type)
+        return query.all()
+
+    def list_leaf_assets(self, asset_type: Optional[str] = None) -> List[Asset]:
+        """
+        Return only leaf-node assets (assets with no children).
+        """
+        Child = aliased(Asset)
+
+        query = (
+            self.session.query(Asset)
+            .outerjoin(Child, Child.parent_uuid == Asset.asset_uuid)
+            .filter(Child.asset_uuid.is_(None))
+        )
+
+        if asset_type:
+            query = query.filter(Asset.asset_type == asset_type)
+
         return query.all()
 
     def get_asset(self, asset_uuid: str) -> Optional[Asset]:
