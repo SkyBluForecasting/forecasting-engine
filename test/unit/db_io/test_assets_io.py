@@ -1,39 +1,56 @@
 import pytest
 import pandas as pd
-from unittest.mock import MagicMock
 
 from forecasting_db.models import Asset
 from forecasting_engine.db_io.assets_io import AssetsIO
-
 
 # ----------------------------
 # list_assets tests
 # ----------------------------
 
 
-def test_list_assets_returns_all(make_io, mock_session):
+def test_list_assets_returns_all(in_memory_session):
     """Should return all assets if no type filter is given."""
-    mock_asset1 = MagicMock(spec=Asset)
-    mock_asset2 = MagicMock(spec=Asset)
-    mock_session.query.return_value.all.return_value = [mock_asset1, mock_asset2]
+    asset1 = Asset(
+        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
+    )
+    asset2 = Asset(
+        asset_uuid="A2",
+        asset_type="distribution_substation",
+        name="Asset 2",
+        depth=0,
+        measured=True,
+    )
+    in_memory_session.add_all([asset1, asset2])
+    in_memory_session.flush()
 
-    io = make_io(AssetsIO)
+    io = AssetsIO(in_memory_session)
     assets = io.list_assets()
 
-    assert assets == [mock_asset1, mock_asset2]
-    mock_session.query.assert_called_once_with(Asset)
+    uuids = {a.asset_uuid for a in assets}
+    assert uuids == {"A1", "A2"}
 
 
-def test_list_assets_filters_by_type(make_io, mock_session):
+def test_list_assets_filters_by_type(in_memory_session):
     """Should filter assets by asset_type."""
-    mock_asset = MagicMock(spec=Asset)
-    mock_session.query.return_value.filter.return_value.all.return_value = [mock_asset]
+    asset1 = Asset(
+        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
+    )
+    asset2 = Asset(
+        asset_uuid="A2",
+        asset_type="distribution_substation",
+        name="Asset 2",
+        depth=0,
+        measured=True,
+    )
+    in_memory_session.add_all([asset1, asset2])
+    in_memory_session.flush()
 
-    io = make_io(AssetsIO)
-    assets = io.list_assets(asset_type="pv")
+    io = AssetsIO(in_memory_session)
+    assets = io.list_assets(asset_type="system")
 
-    mock_session.query.return_value.filter.assert_called_once()
-    assert assets == [mock_asset]
+    uuids = [a.asset_uuid for a in assets]
+    assert uuids == ["A1"]
 
 
 # ----------------------------
@@ -41,26 +58,24 @@ def test_list_assets_filters_by_type(make_io, mock_session):
 # ----------------------------
 
 
-def test_get_asset_found(make_io, mock_session):
+def test_get_asset_found(in_memory_session):
     """Should return a single asset if found."""
-    mock_asset = MagicMock(spec=Asset)
-    mock_session.query.return_value.filter.return_value.one_or_none.return_value = (
-        mock_asset
+    asset = Asset(
+        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
     )
+    in_memory_session.add(asset)
+    in_memory_session.flush()
 
-    io = make_io(AssetsIO)
-    result = io.get_asset("ASSET123")
+    io = AssetsIO(in_memory_session)
+    result = io.get_asset("A1")
 
-    assert result == mock_asset
-    mock_session.query.return_value.filter.assert_called_once()
+    assert result.asset_uuid == "A1"
 
 
-def test_get_asset_not_found(make_io, mock_session):
+def test_get_asset_not_found(in_memory_session):
     """Should return None if asset not found."""
-    mock_session.query.return_value.filter.return_value.one_or_none.return_value = None
-
-    io = make_io(AssetsIO)
-    result = io.get_asset("ASSET123")
+    io = AssetsIO(in_memory_session)
+    result = io.get_asset("NONEXISTENT")
 
     assert result is None
 
@@ -70,18 +85,21 @@ def test_get_asset_not_found(make_io, mock_session):
 # ----------------------------
 
 
-def test_to_df_returns_dataframe(make_io, mock_session):
+def test_to_df_returns_dataframe(in_memory_session):
     """Should convert assets to a DataFrame."""
-    mock_asset = MagicMock(spec=Asset)
-    mock_asset.asset_uuid = "A1"
-    mock_asset.name = "Asset 1"
-    mock_asset.asset_type = "pv"
-    mock_asset.capacity_kw = 100
-    mock_asset.parent_uuid = None
+    asset = Asset(
+        asset_uuid="A1",
+        name="Asset 1",
+        asset_type="system",
+        capacity_kw=100,
+        depth=0,
+        measured=True,
+        parent_uuid=None,
+    )
+    in_memory_session.add(asset)
+    in_memory_session.flush()
 
-    mock_session.query.return_value.all.return_value = [mock_asset]
-    io = make_io(AssetsIO)
-
+    io = AssetsIO(in_memory_session)
     df = io.to_df()
 
     assert isinstance(df, pd.DataFrame)
@@ -95,24 +113,33 @@ def test_to_df_returns_dataframe(make_io, mock_session):
     }
 
 
-def test_to_df_empty_returns_empty_df(make_io, mock_session):
+def test_to_df_empty_returns_empty_df(in_memory_session):
     """Should return empty DataFrame when no assets found."""
-    mock_session.query.return_value.all.return_value = []
-    io = make_io(AssetsIO)
-
+    io = AssetsIO(in_memory_session)
     df = io.to_df()
     assert df.empty
 
 
-def test_to_df_filters_by_type(make_io, mock_session):
+def test_to_df_filters_by_type(in_memory_session):
     """Should call list_assets with asset_type when provided."""
-    mock_asset = MagicMock(spec=Asset)
-    mock_session.query.return_value.filter.return_value.all.return_value = [mock_asset]
+    asset1 = Asset(
+        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
+    )
+    asset2 = Asset(
+        asset_uuid="A2",
+        asset_type="distribution_substation",
+        name="Asset 2",
+        depth=0,
+        measured=True,
+    )
+    in_memory_session.add_all([asset1, asset2])
+    in_memory_session.flush()
 
-    io = make_io(AssetsIO)
-    io.to_df(asset_type="substation")
+    io = AssetsIO(in_memory_session)
+    df = io.to_df(asset_type="distribution_substation")
 
-    mock_session.query.return_value.filter.assert_called_once()
+    uuids = df["asset_uuid"].tolist()
+    assert uuids == ["A2"]
 
 
 # ----------------------------
@@ -120,9 +147,121 @@ def test_to_df_filters_by_type(make_io, mock_session):
 # ----------------------------
 
 
-def test_from_df_not_implemented(make_io, mock_session):
+def test_from_df_not_implemented(in_memory_session):
     """Should raise NotImplementedError."""
-    io = make_io(AssetsIO)
+    io = AssetsIO(in_memory_session)
     df = pd.DataFrame()
     with pytest.raises(NotImplementedError, match="from_df"):
         io.from_df(df)
+
+
+# ----------------------------
+# list_leaf_assets tests
+# ----------------------------
+
+
+def test_list_leaf_assets_basic(in_memory_session):
+    # Hierarchy: PARENT1 -> CHILD1 -> LEAF1
+    parent = Asset(
+        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
+    )
+    child = Asset(
+        asset_uuid="CHILD1",
+        asset_type="system",
+        name="Child",
+        depth=1,
+        measured=True,
+        parent_uuid="PARENT1",
+    )
+    leaf = Asset(
+        asset_uuid="LEAF1",
+        asset_type="system",
+        name="Leaf",
+        depth=2,
+        measured=True,
+        parent_uuid="CHILD1",
+    )
+
+    in_memory_session.add_all([parent, child, leaf])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_leaf_assets()
+
+    # Only LEAF1 has no children → leaf node
+    leaf_uuids = [a.asset_uuid for a in result]
+    assert leaf_uuids == ["LEAF1"]
+
+
+def test_list_leaf_assets_top_level_leaf(in_memory_session):
+    # Top-level leaf (no parent)
+    leaf = Asset(
+        asset_uuid="LEAF1", asset_type="system", name="Leaf", depth=0, measured=True
+    )
+    in_memory_session.add(leaf)
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_leaf_assets()
+
+    assert [a.asset_uuid for a in result] == ["LEAF1"]
+
+
+def test_list_leaf_assets_multiple_leaves(in_memory_session):
+    # Multiple leaves
+    parent = Asset(
+        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
+    )
+    leaf1 = Asset(
+        asset_uuid="LEAF1",
+        asset_type="system",
+        name="Leaf1",
+        depth=1,
+        measured=True,
+        parent_uuid="PARENT1",
+    )
+    leaf2 = Asset(
+        asset_uuid="LEAF2",
+        asset_type="distribution_substation",
+        name="Leaf2",
+        depth=0,
+        measured=True,
+    )
+    in_memory_session.add_all([parent, leaf1, leaf2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_leaf_assets()
+
+    leaf_uuids = {a.asset_uuid for a in result}
+    assert leaf_uuids == {"LEAF1", "LEAF2"}
+
+
+def test_list_leaf_assets_filter_by_type(in_memory_session):
+    parent = Asset(
+        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
+    )
+    leaf1 = Asset(
+        asset_uuid="LEAF1",
+        asset_type="system",
+        name="Leaf1",
+        depth=1,
+        measured=True,
+        parent_uuid="PARENT1",
+    )
+    leaf2 = Asset(
+        asset_uuid="LEAF2",
+        asset_type="distribution_substation",
+        name="Leaf2",
+        depth=0,
+        measured=True,
+    )
+    in_memory_session.add_all([parent, leaf1, leaf2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_leaf_assets(asset_type="system")
+
+    # Only LEAF1 is of type "system"
+    leaf_uuids = [a.asset_uuid for a in result]
+    assert leaf_uuids == ["LEAF1"]

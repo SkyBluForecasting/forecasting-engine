@@ -37,7 +37,6 @@ class ForecastIO(BaseIO):
                     "timestamp": row["timestamp"],
                     "lower_q": row.get("p05"),  # map lower quantile
                     "upper_q": row.get("p95"),  # map upper quantile
-                    "description": row.get("description"),
                 }
                 db_mappings.append(mapping)
 
@@ -72,14 +71,9 @@ class ForecastIO(BaseIO):
                     {
                         "timestamp": r.timestamp,
                         "forecast": r.forecast_value,
-                        "p05": r.p05,
-                        "p10": r.p10,
-                        "p30": r.p30,
-                        "p50": r.p50,
-                        "p70": r.p70,
-                        "p90": r.p90,
-                        "p95": r.p95,
-                        "description": r.description,
+                        "p05": r.lower_q,
+                        "p95": r.upper_q,
+                        "forecast_run_id": r.forecast_run_id,
                     }
                     for r in rows
                 ]

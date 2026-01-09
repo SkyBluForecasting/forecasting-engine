@@ -2,6 +2,7 @@ import json
 
 from forecasting_engine.config import SQS_CLIENT, QUEUE_URL
 from forecasting_engine.db_io.measurement_io import MeasurementsIO
+from forecasting_engine.db_io.assets_io import AssetsIO
 from forecasting_engine.db_io.forecast_run_io import ForecastRunIO
 from forecasting_engine.db_io.session import SessionLocal
 import logging
@@ -12,22 +13,31 @@ logging.basicConfig(
 )
 
 
-def get_assets_to_forecast(measurement_io, forecast_run_io):
+def get_assets_to_forecast(measurement_io, forecast_run_io, assets_io):
     """
-    Determine which assets require a new forecast based on their latest measurements.
+    Determine which leaf-node assets require a new forecast based on their latest measurements.
+
 
     Steps:
-      1. Retrieve the latest measurement timestamp for each asset.
-      2. Retrieve the most recent forecast run timestamp for the same set of assets.
-      3. Compare timestamps — if a measurement is newer than the last forecast,
+      1. Retrieve all leaf-node assets (assets with no children) from the database
+      2. Retrieve the latest measurement timestamp for each asset.
+      3. Retrieve the most recent forecast run timestamp for the same set of assets.
+      4. Compare timestamps — if a measurement is newer than the last forecast,
          that asset needs a new forecast run.
 
     Returns:
-        dict[str, datetime]: A mapping of asset_id -> latest measurement timestamp
+        dict[str, datetime]: A mapping of leaf asset_id -> latest measurement timestamp
                              for assets that require a forecast update.
 
     """
-    latest_loads = measurement_io.get_latest_load_per_asset()
+
+    leaf_assets = assets_io.list_leaf_assets()
+    leaf_asset_ids = [a.asset_uuid for a in leaf_assets]
+
+    if not leaf_asset_ids:
+        return {}
+
+    latest_loads = measurement_io.get_latest_load_per_asset(asset_uuids=leaf_asset_ids)
     if not latest_loads:
         return {}
 
@@ -59,8 +69,12 @@ def enqueue_new_forecasts():
     with SessionLocal() as session:
         measurement_io = MeasurementsIO(session)
         forecast_run_io = ForecastRunIO(session)
+        assets_io = AssetsIO(session)
 
-        assets_to_forecast = get_assets_to_forecast(measurement_io, forecast_run_io)
+        assets_to_forecast = get_assets_to_forecast(
+            measurement_io, forecast_run_io, assets_io
+        )
+        logger.warning(assets_to_forecast)
         if not assets_to_forecast:
             logger.warning("No assets require a forecast")
             return

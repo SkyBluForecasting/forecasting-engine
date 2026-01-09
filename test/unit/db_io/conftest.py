@@ -1,86 +1,41 @@
 import pytest
-import pandas as pd
-from unittest.mock import MagicMock
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-
-# ----------------------------
-# Mock SQLAlchemy session fixture
-# ----------------------------
-@pytest.fixture
-def mock_session():
-    """Return a mock SQLAlchemy session with default behavior."""
-    session = MagicMock(spec=Session)
-    session.commit = MagicMock()
-    session.rollback = MagicMock()
-    return session
-
-
-# ----------------------------
-# Generic factory fixture for IO classes
-# ----------------------------
-@pytest.fixture
-def make_io(mock_session):
-    """
-    Factory to create an IO instance with a mock session.
-
-    Usage in tests:
-        def test_something(make_io):
-            io = make_io(ForecastRunIO)
-    """
-
-    def _make(io_class, session=None):
-        return io_class(session or mock_session)
-
-    return _make
-
-
-# ----------------------------
-# Sample test data fixtures
-# ----------------------------
+from forecasting_db.models import Base
+from forecasting_engine.db_io.constraint_io import ConstraintsIO
+from forecasting_engine.db_io.forecast_io import ForecastIO
 
 
 @pytest.fixture
-def forecast_df():
+def in_memory_session():
+    engine = create_engine("sqlite:///:memory:", future=True)
 
-    return pd.DataFrame(
-        {
-            "timestamp": pd.date_range("2025-01-01", periods=3, freq="H"),
-            "forecast": [10, 20, 30],
-            "p05": [5, 10, 15],
-            "p95": [15, 25, 35],
-            "description": ["desc"] * 3,
-        }
-    )
+    # SQLite doesn't support schemas
+    for table in Base.metadata.tables.values():
+        table.schema = None
 
+    Base.metadata.create_all(engine)
 
-@pytest.fixture
-def constraint_forecast_df():
+    Session = sessionmaker(bind=engine, future=True)
+    session = Session()
 
-    return pd.DataFrame(
-        {
-            "timestamp": pd.date_range("2025-01-01", periods=3, freq="H"),
-            "forecast": [10, 20, 30],
-        }
-    )
+    try:
+        yield session
+    finally:
+        session.close()
 
 
-@pytest.fixture
-def measurement_df():
-
-    return pd.DataFrame(
-        {
-            "timestamp": pd.date_range("2025-01-01", periods=3, freq="H"),
-            "metric": ["load", "temp", "load"],
-            "value": [10, 5, 20],
-        }
-    )
+# # ----------------------------
+# # Sample test data fixtures
+# # ----------------------------
 
 
 @pytest.fixture
-def mock_asset():
+def constraints_io(in_memory_session):
+    return ConstraintsIO(in_memory_session)
 
-    asset = MagicMock()
-    asset.asset_uuid = "ASSET1"
-    asset.capacity_kw = 100
-    return asset
+
+@pytest.fixture
+def forecast_io(in_memory_session):
+    return ForecastIO(in_memory_session)

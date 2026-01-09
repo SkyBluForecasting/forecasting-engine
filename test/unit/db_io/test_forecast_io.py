@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from forecasting_engine.db_io.forecast_io import ForecastIO
+from forecasting_db.models import Forecast
 
 
 # ----------------------------
@@ -8,99 +8,119 @@ from forecasting_engine.db_io.forecast_io import ForecastIO
 # ----------------------------
 
 
-def test_from_df_empty_df_raises_valueerror(make_io, mock_session):
-    """Should raise ValueError if forecast_df is empty."""
-    io = make_io(ForecastIO)
+@pytest.fixture
+def forecast_df():
+    return pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2025-01-01", periods=3, freq="h"),
+            "forecast": [10.0, 12.0, 15.0],
+            "p05": [8, 9, 10],
+            "p95": [14, 16, 19],
+        }
+    )
+
+
+# ----------------------------
+# from_df tests
+# ----------------------------
+def test_from_df_empty_df_raises_valueerror(forecast_io, in_memory_session):
     df = pd.DataFrame(columns=["timestamp", "forecast"])
+
     with pytest.raises(ValueError, match="Empty forecast DataFrame"):
-        io.from_df(df, forecast_run_id=1)
-    mock_session.rollback.assert_called_once()
+        forecast_io.from_df(df, forecast_run_id="RUN1")
+
+    # No rows written
+    assert in_memory_session.query(Forecast).count() == 0
 
 
-def test_from_df_missing_required_columns_raises(make_io, mock_session):
-    """Should raise ValueError if required columns are missing."""
-    io = make_io(ForecastIO)
+def test_from_df_missing_required_columns_raises(forecast_io, in_memory_session):
     df = pd.DataFrame({"timestamp": pd.date_range("2025-01-01", periods=3, freq="h")})
+
     with pytest.raises(ValueError, match="Missing required columns"):
-        io.from_df(df, forecast_run_id=1)
-    mock_session.rollback.assert_called_once()
+        forecast_io.from_df(df, forecast_run_id="RUN1")
+
+    assert in_memory_session.query(Forecast).count() == 0
 
 
-def test_from_df_inserts_and_commits(make_io, mock_session, forecast_df):
-    """Should insert forecast rows and commit."""
-    io = make_io(ForecastIO)
-    io.from_df(forecast_df, forecast_run_id=1)
+def test_from_df_inserts_rows(forecast_io, in_memory_session, forecast_df):
+    forecast_io.from_df(forecast_df, forecast_run_id="RUN1")
 
-    # Expect one bulk insert with 3 mappings
-    args, kwargs = mock_session.bulk_insert_mappings.call_args
-    called_model, called_rows = args
-    assert len(called_rows) == len(forecast_df)
-    assert all("forecast_value" in r for r in called_rows)
-    mock_session.commit.assert_called_once()
+    rows = in_memory_session.query(Forecast).all()
+
+    assert len(rows) == len(forecast_df)
+    assert all(r.forecast_run_id == "RUN1" for r in rows)
 
 
-def test_from_df_exception_rolls_back(make_io, mock_session, forecast_df):
-    """Should rollback and re-raise on DB error."""
-    io = make_io(ForecastIO)
-    mock_session.bulk_insert_mappings.side_effect = RuntimeError("DB failure")
+def test_from_df_partial_columns_still_insert(forecast_io, in_memory_session):
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2025-01-01", periods=2, freq="h"),
+            "forecast": [10, 20],
+        }
+    )
+
+    forecast_io.from_df(df, forecast_run_id="RUN1")
+
+    rows = in_memory_session.query(Forecast).all()
+    assert len(rows) == 2
+
+
+def test_from_df_exception_rolls_back(
+    forecast_io, in_memory_session, forecast_df, monkeypatch
+):
+    # Force DB failure
+    monkeypatch.setattr(
+        in_memory_session,
+        "bulk_insert_mappings",
+        lambda *_, **__: (_ for _ in ()).throw(RuntimeError("DB failure")),
+    )
+
     with pytest.raises(RuntimeError, match="DB failure"):
-        io.from_df(forecast_df, forecast_run_id=1)
-    mock_session.rollback.assert_called_once()
+        forecast_io.from_df(forecast_df, forecast_run_id="RUN1")
+
+    assert in_memory_session.query(Forecast).count() == 0
 
 
-# ----------------------------
-# to_df tests
-# ----------------------------
+# # ----------------------------
+# # to_df tests
+# # ----------------------------
 
 
-def test_to_df_returns_dataframe(make_io, mock_session):
-    """Should return DataFrame with expected columns."""
+def test_to_df_returns_dataframe(forecast_io, in_memory_session, forecast_df):
+    forecast_io.from_df(forecast_df, forecast_run_id="RUN1")
 
-    class Row:
-        def __init__(self):
-            self.timestamp = pd.Timestamp("2025-01-01T00:00:00Z")
-            self.forecast_value = 10
-            self.p05 = 5
-            self.p10 = 7
-            self.p30 = 9
-            self.p50 = 10
-            self.p70 = 11
-            self.p90 = 13
-            self.p95 = 15
-            self.description = "test"
-
-    rows = [Row(), Row()]
-    mock_query = mock_session.query.return_value
-    mock_query.filter.return_value.all.return_value = rows
-
-    io = make_io(ForecastIO)
-    df = io.to_df(forecast_run_id="RUN1")
+    df = forecast_io.to_df(forecast_run_id="RUN1")
 
     assert isinstance(df, pd.DataFrame)
-    assert len(df) == 2
-    assert set(["timestamp", "forecast", "p05", "p95", "description"]).issubset(
+    assert len(df) == 3
+    assert set(["timestamp", "forecast", "p05", "p95", "forecast_run_id"]).issubset(
         df.columns
     )
     assert pd.api.types.is_datetime64_any_dtype(df["timestamp"])
-    mock_query.filter.assert_called_once()
 
 
-def test_to_df_returns_empty_df_when_no_rows(make_io, mock_session):
-    """Should return empty DataFrame if no rows found."""
-    mock_query = mock_session.query.return_value
-    mock_query.filter.return_value.all.return_value = []
-
-    io = make_io(ForecastIO)
-    df = io.to_df(forecast_run_id="RUN1")
-
+def test_to_df_empty_returns_empty_df(forecast_io):
+    df = forecast_io.to_df(forecast_run_id="MISSING")
     assert df.empty
 
 
-def test_to_df_exception_reraises(make_io, mock_session):
-    """Should re-raise any exception and not swallow it."""
-    mock_query = mock_session.query.return_value
-    mock_query.filter.side_effect = RuntimeError("query failed")
+def test_to_df_filters_by_forecast_run_id(forecast_io, in_memory_session, forecast_df):
+    forecast_io.from_df(forecast_df, forecast_run_id="RUN1")
+    forecast_io.from_df(forecast_df, forecast_run_id="RUN2")
 
-    io = make_io(ForecastIO)
-    with pytest.raises(RuntimeError, match="query failed"):
-        io.to_df(forecast_run_id="RUN1")
+    df = forecast_io.to_df(forecast_run_id="RUN2")
+
+    assert df["forecast_run_id"].nunique() == 1
+    assert df["forecast_run_id"].iloc[0] == "RUN2"
+
+
+def test_to_df_exception_reraises(forecast_io, in_memory_session, monkeypatch):
+    # Monkeypatch session.query to raise an error
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("DB failure")
+
+    monkeypatch.setattr(forecast_io.session, "query", raise_error)
+
+    # Only assert that the exception is raised
+    with pytest.raises(RuntimeError, match="DB failure"):
+        forecast_io.to_df(forecast_run_id="RUN1")
