@@ -44,9 +44,10 @@ class PredictionJobIO(BaseIO):
             return new_obj.id
 
         except Exception as e:
-            logger.error(f"Failed to get/create PredictionJob for asset {pj.id}: {e}")
             self.session.rollback()
-            raise
+            raise RuntimeError(
+                f"Failed to get/create PredictionJob for asset {pj.id}"
+            ) from e
 
     def to_df(self, *args, **kwargs) -> pd.DataFrame:
         """Optional: load PredictionJobs as DataFrame."""

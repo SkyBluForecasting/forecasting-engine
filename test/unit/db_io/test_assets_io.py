@@ -1,27 +1,8 @@
 import pytest
 import pandas as pd
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from forecasting_db.models import Asset, Base
+from forecasting_db.models import Asset
 from forecasting_engine.db_io.assets_io import AssetsIO
-
-
-@pytest.fixture
-def in_memory_session():
-    engine = create_engine("sqlite:///:memory:")
-
-    # remove schema so SQLite can create tables
-    for table in Base.metadata.tables.values():
-        table.schema = None
-
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
-
 
 # ----------------------------
 # list_assets tests
@@ -166,7 +147,7 @@ def test_to_df_filters_by_type(in_memory_session):
 # ----------------------------
 
 
-def test_from_df_not_implemented(make_io, mock_session):
+def test_from_df_not_implemented(in_memory_session):
     """Should raise NotImplementedError."""
     io = AssetsIO(in_memory_session)
     df = pd.DataFrame()
