@@ -41,7 +41,7 @@ def get_assets_to_forecast(measurement_io, forecast_run_io, assets_io):
     if not latest_loads:
         return {}
 
-    latest_forecasts = forecast_run_io.get_latest_forecast_run_per_asset(
+    latest_forecasts = forecast_run_io.get_latest_forecast_run_start_time_per_asset(
         list(latest_loads.keys())
     )
 

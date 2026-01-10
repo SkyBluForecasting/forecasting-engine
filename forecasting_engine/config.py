@@ -12,3 +12,5 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create boto3 clients here, reuse everywhere
 SQS_CLIENT = boto3.client("sqs", region_name=AWS_REGION)
+
+DEFAULT_FORECAST_HORIZON_MINUTES = 48 * 60  # 48 hours

@@ -2,7 +2,7 @@ from forecasting_engine.db_io.base_io import BaseIO
 from forecasting_db.models import ForecastRun
 from forecasting_engine.shared.logger_factory import get_logger
 import pandas as pd
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_, desc
 import datetime
 import uuid
 
@@ -77,7 +77,7 @@ class ForecastRunIO(BaseIO):
     def from_df(self, df: pd.DataFrame, *args, **kwargs):
         pass
 
-    def get_latest_forecast_run_per_asset(
+    def get_latest_forecast_run_start_time_per_asset(
         self, asset_uuids: list[str]
     ) -> dict[str, datetime.datetime]:
         """
@@ -94,3 +94,34 @@ class ForecastRunIO(BaseIO):
         )
 
         return {r[0]: r[1] for r in rows}
+
+    def get_latest_overlapping_forecast_run_id(
+        self,
+        asset_uuid: str,
+        window_start: datetime.datetime,
+        window_end: datetime.datetime,
+    ) -> str | None:
+        """
+        Return the latest ForecastRun (by start_time) for an asset that overlaps
+        any part of [window_start, window_end].
+
+        Overlap condition:
+        run.start_time <= window_end AND run.end_time >= window_start
+        If end_time can be NULL, treat it as open-ended.
+        """
+        overlap = and_(
+            ForecastRun.start_time <= window_end,
+            or_(
+                ForecastRun.end_time == None,  # noqa: E711
+                ForecastRun.end_time >= window_start,
+            ),
+        )
+
+        row = (
+            self.session.query(ForecastRun.forecast_run_id)
+            .filter(ForecastRun.asset_uuid == asset_uuid, overlap)
+            .order_by(desc(ForecastRun.start_time))
+            .first()
+        )
+
+        return row[0] if row else None

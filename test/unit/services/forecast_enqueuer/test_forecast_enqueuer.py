@@ -61,7 +61,7 @@ class TestGetAssetsToForecast:
                 if k in (asset_uuids or asset_times.keys())
             }
         )
-        fake_forecast_run_io.get_latest_forecast_run_per_asset.return_value = {
+        fake_forecast_run_io.get_latest_forecast_run_start_time_per_asset.return_value = {
             "asset2": asset_times["asset2"][0] - timedelta(minutes=5)
         }
 
@@ -110,7 +110,7 @@ class TestGetAssetsToForecast:
             "asset1": (ts_measurement, 123.0)
         }
 
-        fake_forecast_run_io.get_latest_forecast_run_per_asset.return_value = {
+        fake_forecast_run_io.get_latest_forecast_run_start_time_per_asset.return_value = {
             "asset1": ts_forecast
         }
 
