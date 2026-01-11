@@ -185,15 +185,39 @@ def test_run_asset_forecast_exceptions(monkeypatch, exception, status):
     assert result["status"] == status
 
 
-def test_run_asset_forecast_inner(monkeypatch):
+# ============================
+# _run_asset_forecast_inner
+# ============================
+
+
+@pytest.mark.parametrize(
+    "generate_return,expected_status,expected_msg_substring",
+    [
+        (object(), "success", None),  # any non-None return means "success"
+        (
+            None,
+            "skipped",
+            "No forecast generated",
+        ),
+    ],
+)
+def test_run_asset_forecast_inner(
+    monkeypatch, generate_return, expected_status, expected_msg_substring
+):
     session = MagicMock()
     session.__enter__.return_value = session
 
+    # SessionLocal() returns a context manager (your MagicMock session)
     monkeypatch.setattr(
         "forecasting_engine.shared.forecast_runner.SessionLocal",
         lambda: session,
     )
-    fm_class = MagicMock()
+
+    # ForecastManager(session) -> instance with generate_forecast mocked
+    fm_instance = MagicMock()
+    fm_instance.generate_forecast.return_value = generate_return
+
+    fm_class = MagicMock(return_value=fm_instance)
     monkeypatch.setattr(
         "forecasting_engine.shared.forecast_runner.ForecastManager",
         fm_class,
@@ -201,8 +225,14 @@ def test_run_asset_forecast_inner(monkeypatch):
 
     result = _run_asset_forecast_inner("ASSET123")
 
-    fm_class.return_value.generate_forecast.assert_called_once_with("ASSET123")
-    assert result["status"] == "success"
+    fm_class.assert_called_once_with(session)
+    fm_instance.generate_forecast.assert_called_once_with("ASSET123")
+
+    assert result["status"] == expected_status
+    if expected_msg_substring is None:
+        assert result["message"] is None
+    else:
+        assert expected_msg_substring in (result["message"] or "")
 
 
 # ============================

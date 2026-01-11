@@ -30,6 +30,7 @@ def run_bottom_up(*, dry_run: bool = False, asset_type: str | None = None) -> di
 
         total = 0
         failures: list[dict] = []
+        skipped: list[dict] = []
 
         for depth in range(max_depth, -1, -1):
             parents = assets_io.list_non_leaf_assets_at_depth(
@@ -54,6 +55,19 @@ def run_bottom_up(*, dry_run: bool = False, asset_type: str | None = None) -> di
                 result = run_asset_forecast(asset.asset_uuid)
                 status = result.get("status")
 
+                if status == "skipped":
+                    skipped.append(
+                        {
+                            "asset_uuid": asset.asset_uuid,
+                            "depth": depth,
+                            "message": result.get("message"),
+                        }
+                    )
+                    logger.warning(
+                        f"Forecast skipped: asset={asset.asset_uuid} depth={depth} msg={result.get('message')}"
+                    )
+                    continue
+
                 if status != "success":
                     failure = {
                         "asset_uuid": asset.asset_uuid,
@@ -68,8 +82,8 @@ def run_bottom_up(*, dry_run: bool = False, asset_type: str | None = None) -> di
             "status": overall_status,
             "total_attempted": total,
             "failures": failures,
+            "skipped": skipped,
         }
-
     except Exception:
         logger.exception("Bottom-up non-leaf forecast run failed")
         return {"status": "fatal_error"}
