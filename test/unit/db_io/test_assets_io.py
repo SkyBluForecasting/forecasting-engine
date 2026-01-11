@@ -265,3 +265,374 @@ def test_list_leaf_assets_filter_by_type(in_memory_session):
     # Only LEAF1 is of type "system"
     leaf_uuids = [a.asset_uuid for a in result]
     assert leaf_uuids == ["LEAF1"]
+
+
+# ----------------------------
+# list_non_leaf_assets tests
+# ----------------------------
+
+
+def test_list_non_leaf_assets_basic(in_memory_session):
+    """
+    Hierarchy:
+        PARENT (depth 0)
+          -> CHILD (depth 1)
+              -> LEAF (depth 2)
+
+    Non-leaf assets should be: PARENT, CHILD
+    """
+    parent = Asset(
+        asset_uuid="PARENT",
+        asset_type="system",
+        name="Parent",
+        depth=0,
+        measured=True,
+    )
+    child = Asset(
+        asset_uuid="CHILD",
+        asset_type="system",
+        name="Child",
+        depth=1,
+        measured=True,
+        parent_uuid="PARENT",
+    )
+    leaf = Asset(
+        asset_uuid="LEAF",
+        asset_type="system",
+        name="Leaf",
+        depth=2,
+        measured=True,
+        parent_uuid="CHILD",
+    )
+
+    in_memory_session.add_all([parent, child, leaf])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_non_leaf_assets()
+
+    non_leaf_uuids = {a.asset_uuid for a in result}
+    assert non_leaf_uuids == {"PARENT", "CHILD"}
+
+
+def test_list_non_leaf_assets_no_children_returns_empty(in_memory_session):
+    """If there are no parent-child links, there are no non-leaf assets."""
+    a1 = Asset(asset_uuid="A1", asset_type="system", name="A1", depth=0, measured=True)
+    a2 = Asset(asset_uuid="A2", asset_type="system", name="A2", depth=0, measured=True)
+    in_memory_session.add_all([a1, a2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_non_leaf_assets()
+
+    assert result == []
+
+
+def test_list_non_leaf_assets_filter_by_type(in_memory_session):
+    """
+    If filtering by type, return only non-leaf assets of that type (not their children).
+    """
+    parent_system = Asset(
+        asset_uuid="P_SYSTEM",
+        asset_type="system",
+        name="Parent System",
+        depth=0,
+        measured=True,
+    )
+    child_system = Asset(
+        asset_uuid="C_SYSTEM",
+        asset_type="system",
+        name="Child System",
+        depth=1,
+        measured=True,
+        parent_uuid="P_SYSTEM",
+    )
+
+    parent_sub = Asset(
+        asset_uuid="P_SUB",
+        asset_type="distribution_substation",
+        name="Parent Sub",
+        depth=0,
+        measured=True,
+    )
+    child_sub = Asset(
+        asset_uuid="C_SUB",
+        asset_type="distribution_substation",
+        name="Child Sub",
+        depth=1,
+        measured=True,
+        parent_uuid="P_SUB",
+    )
+
+    in_memory_session.add_all([parent_system, child_system, parent_sub, child_sub])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_non_leaf_assets(asset_type="system")
+
+    # Only P_SYSTEM is a non-leaf of type system
+    assert [a.asset_uuid for a in result] == ["P_SYSTEM"]
+
+
+# ----------------------------
+# list_non_leaf_assets_at_depth tests
+# ----------------------------
+
+
+def test_list_non_leaf_assets_at_depth_returns_only_matching_depth(in_memory_session):
+    """
+    Build two non-leaf assets at different depths:
+
+    P0 (depth 0) -> C1 (depth 1) -> L2 (depth 2)
+    """
+    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+    c1 = Asset(
+        asset_uuid="C1",
+        asset_type="system",
+        name="C1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    l2 = Asset(
+        asset_uuid="L2",
+        asset_type="system",
+        name="L2",
+        depth=2,
+        measured=True,
+        parent_uuid="C1",
+    )
+
+    in_memory_session.add_all([p0, c1, l2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+
+    # Depth 0 non-leaf should be P0
+    result0 = io.list_non_leaf_assets_at_depth(0)
+    assert [a.asset_uuid for a in result0] == ["P0"]
+
+    # Depth 1 non-leaf should be C1
+    result1 = io.list_non_leaf_assets_at_depth(1)
+    assert [a.asset_uuid for a in result1] == ["C1"]
+
+    # Depth 2 is leaf; should be empty
+    result2 = io.list_non_leaf_assets_at_depth(2)
+    assert result2 == []
+
+
+def test_list_non_leaf_assets_at_depth_orders_by_uuid(in_memory_session):
+    """
+    Ensure ordering is deterministic: order_by Asset.asset_uuid.asc().
+    """
+    # P0 has two children at depth 1, both non-leaf (each has its own child)
+    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+
+    # These two are at depth=1 and each has a child -> both are non-leaf
+    b1 = Asset(
+        asset_uuid="B1",
+        asset_type="system",
+        name="B1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    a1 = Asset(
+        asset_uuid="A1",
+        asset_type="system",
+        name="A1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+
+    b2 = Asset(
+        asset_uuid="B2",
+        asset_type="system",
+        name="B2",
+        depth=2,
+        measured=True,
+        parent_uuid="B1",
+    )
+    a2 = Asset(
+        asset_uuid="A2",
+        asset_type="system",
+        name="A2",
+        depth=2,
+        measured=True,
+        parent_uuid="A1",
+    )
+
+    in_memory_session.add_all([p0, b1, a1, b2, a2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_non_leaf_assets_at_depth(1)
+
+    # Ordered by asset_uuid asc: A1 then B1
+    assert [a.asset_uuid for a in result] == ["A1", "B1"]
+
+
+def test_list_non_leaf_assets_at_depth_filter_by_type(in_memory_session):
+    """
+    Same depth, but different types; filter should return only matching type.
+    """
+    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+
+    sys_parent = Asset(
+        asset_uuid="SYS1",
+        asset_type="system",
+        name="SYS1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    sys_child = Asset(
+        asset_uuid="SYS2",
+        asset_type="system",
+        name="SYS2",
+        depth=2,
+        measured=True,
+        parent_uuid="SYS1",
+    )
+
+    sub_parent = Asset(
+        asset_uuid="SUB1",
+        asset_type="distribution_substation",
+        name="SUB1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    sub_child = Asset(
+        asset_uuid="SUB2",
+        asset_type="distribution_substation",
+        name="SUB2",
+        depth=2,
+        measured=True,
+        parent_uuid="SUB1",
+    )
+
+    in_memory_session.add_all([p0, sys_parent, sys_child, sub_parent, sub_child])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    result = io.list_non_leaf_assets_at_depth(1, asset_type="distribution_substation")
+
+    assert [a.asset_uuid for a in result] == ["SUB1"]
+
+
+# ----------------------------
+# get_max_depth_non_leaf tests
+# ----------------------------
+
+
+def test_get_max_depth_non_leaf_basic(in_memory_session):
+    """
+    P0 (depth 0) -> C1 (depth 1) -> L2 (depth 2)
+
+    Non-leaf assets are P0 (0) and C1 (1). Max non-leaf depth = 1.
+    """
+    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+    c1 = Asset(
+        asset_uuid="C1",
+        asset_type="system",
+        name="C1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    l2 = Asset(
+        asset_uuid="L2",
+        asset_type="system",
+        name="L2",
+        depth=2,
+        measured=True,
+        parent_uuid="C1",
+    )
+
+    in_memory_session.add_all([p0, c1, l2])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    assert io.get_max_depth_non_leaf() == 1
+
+
+def test_get_max_depth_non_leaf_empty_returns_zero(in_memory_session):
+    """No parent-child edges => no non-leaf => should return 0 per implementation."""
+    leaf = Asset(
+        asset_uuid="LEAF", asset_type="system", name="Leaf", depth=5, measured=True
+    )
+    in_memory_session.add(leaf)
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+    assert io.get_max_depth_non_leaf() == 0
+
+
+def test_get_max_depth_non_leaf_filter_by_type(in_memory_session):
+    """
+    Two hierarchies of different types:
+
+    system: P0 (0) -> C1 (1) -> L2 (2) => max non-leaf depth = 1
+    substation: PS (0) -> CS (1) -> GS (2) -> LS (3) => non-leaf depths 0,1,2 => max = 2
+    """
+    # system chain
+    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+    c1 = Asset(
+        asset_uuid="C1",
+        asset_type="system",
+        name="C1",
+        depth=1,
+        measured=True,
+        parent_uuid="P0",
+    )
+    l2 = Asset(
+        asset_uuid="L2",
+        asset_type="system",
+        name="L2",
+        depth=2,
+        measured=True,
+        parent_uuid="C1",
+    )
+
+    # distribution_substation chain (longer)
+    ps0 = Asset(
+        asset_uuid="PS0",
+        asset_type="distribution_substation",
+        name="PS0",
+        depth=0,
+        measured=True,
+    )
+    cs1 = Asset(
+        asset_uuid="CS1",
+        asset_type="distribution_substation",
+        name="CS1",
+        depth=1,
+        measured=True,
+        parent_uuid="PS0",
+    )
+    gs2 = Asset(
+        asset_uuid="GS2",
+        asset_type="distribution_substation",
+        name="GS2",
+        depth=2,
+        measured=True,
+        parent_uuid="CS1",
+    )
+    ls3 = Asset(
+        asset_uuid="LS3",
+        asset_type="distribution_substation",
+        name="LS3",
+        depth=3,
+        measured=True,
+        parent_uuid="GS2",
+    )
+
+    in_memory_session.add_all([p0, c1, l2, ps0, cs1, gs2, ls3])
+    in_memory_session.flush()
+
+    io = AssetsIO(in_memory_session)
+
+    assert io.get_max_depth_non_leaf(asset_type="system") == 1
+    assert io.get_max_depth_non_leaf(asset_type="distribution_substation") == 2
