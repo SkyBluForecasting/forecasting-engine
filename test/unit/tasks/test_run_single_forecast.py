@@ -1,6 +1,7 @@
 import sys
 import pytest
 from unittest.mock import patch
+import pandas as pd
 
 from forecasting_engine.tasks.run_single_forecast import run_asset_forecast, main
 
@@ -8,35 +9,41 @@ from forecasting_engine.tasks.run_single_forecast import run_asset_forecast, mai
 # ----------------------------
 # Test run_asset_forecast with various exceptions
 # ----------------------------
+
+
 @pytest.mark.parametrize(
-    "side_effect,expected_status,expected_msg",
+    "generate_return,side_effect,expected_status,expected_msg",
     [
-        (None, "success", None),
-        (FileNotFoundError("missing"), "not_found", "missing"),
-        (ValueError("bad input"), "bad_input", "bad input"),
-        (RuntimeError("fatal"), "fatal_error", "fatal"),
+        # generate_forecast returns a df -> success
+        (pd.DataFrame({"timestamp": [], "forecast": []}), None, "success", None),
+        # generate_forecast returns None -> skipped
+        (None, None, "skipped", "No forecast generated"),
+        # exceptions -> mapped statuses
+        (None, FileNotFoundError("missing"), "not_found", "missing"),
+        (None, ValueError("bad input"), "bad_input", "bad input"),
+        (None, RuntimeError("fatal"), "fatal_error", "fatal"),
     ],
 )
-def test_run_asset_forecast_cases(side_effect, expected_status, expected_msg):
-    # Patch ForecastManager.generate_forecast to simulate success or raise exceptions
+def test_run_asset_forecast_cases(
+    generate_return, side_effect, expected_status, expected_msg
+):
     with patch(
         "forecasting_engine.shared.forecast_runner.ForecastManager.generate_forecast"
     ) as mock_generate:
-        if side_effect is None:
-            mock_generate.return_value = None
-        else:
+        if side_effect is not None:
             mock_generate.side_effect = side_effect
+        else:
+            mock_generate.return_value = generate_return
 
         result = run_asset_forecast("asset-x")
 
-        # Check status
         assert result["status"] == expected_status
 
-        # Check message contains expected text
-        if expected_msg:
-            assert expected_msg in result["message"]
-        else:
+        if expected_msg is None:
             assert result["message"] is None
+        else:
+            # message might be longer; just ensure it contains the key text
+            assert expected_msg in (result["message"] or "")
 
 
 # ----------------------------

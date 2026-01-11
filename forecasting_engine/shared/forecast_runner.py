@@ -61,7 +61,15 @@ def _run_asset_forecast_inner(asset_id: str) -> dict:
     """Core runner: opens session, instantiates manager, generates forecast."""
     with SessionLocal() as session:
         fm = ForecastManager(session)
-        fm.generate_forecast(asset_id)
+        df = fm.generate_forecast(asset_id)
+
+    if df is None:
+        return {
+            "asset_id": asset_id,
+            "status": "skipped",
+            "message": "No forecast generated (e.g., missing child overlap or measured=False).",
+        }
+
     return {"asset_id": asset_id, "status": "success", "message": None}
 
 
