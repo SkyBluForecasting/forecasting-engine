@@ -1,6 +1,7 @@
 from forecasting_db.models import Asset
 from .base_io import BaseIO
 from sqlalchemy.orm import Session, aliased
+from sqlalchemy import func
 from typing import List, Optional
 import pandas as pd
 
@@ -77,3 +78,56 @@ class AssetsIO(BaseIO):
                 for a in assets
             ]
         )
+
+    def list_non_leaf_assets(self, asset_type: Optional[str] = None) -> List[Asset]:
+        """
+        Return non-leaf-node assets (assets with at least one child).
+        """
+        Child = aliased(Asset)
+
+        query = (
+            self.session.query(Asset)
+            .join(Child, Child.parent_uuid == Asset.asset_uuid)
+            .distinct()
+        )
+
+        if asset_type:
+            query = query.filter(Asset.asset_type == asset_type)
+
+        return query.all()
+
+    def list_non_leaf_assets_at_depth(
+        self, depth: int, asset_type: Optional[str] = None
+    ) -> List[Asset]:
+        """
+        Return non-leaf assets at a specific depth.
+        """
+        Child = aliased(Asset)
+
+        query = (
+            self.session.query(Asset)
+            .join(Child, Child.parent_uuid == Asset.asset_uuid)
+            .filter(Asset.depth == depth)
+            .distinct()
+            .order_by(Asset.asset_uuid.asc())
+        )
+
+        if asset_type:
+            query = query.filter(Asset.asset_type == asset_type)
+
+        return query.all()
+
+    def get_max_depth_non_leaf(self, asset_type: Optional[str] = None) -> int:
+        """
+        Return the maximum depth among non-leaf assets.
+        """
+        Child = aliased(Asset)
+
+        query = self.session.query(func.max(Asset.depth)).join(
+            Child, Child.parent_uuid == Asset.asset_uuid
+        )
+
+        if asset_type:
+            query = query.filter(Asset.asset_type == asset_type)
+
+        return query.scalar() or 0

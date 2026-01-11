@@ -69,6 +69,19 @@ services:
              supercronic /crontab"
     restart: always
 
+  nonleaf-forecast-runner:  # Runs non-leaf forecasts bottom-up daily at 03:00 UTC
+    image: forecasting-base:latest
+    container_name: nonleaf-forecast-runner
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+    working_dir: /app
+    command: >
+      sh -c "echo '0 3 * * * python -m forecasting_engine.tasks.run_nonleaf_forecasts' > /crontab &&
+             supercronic /crontab"
+    restart: always
+
   cleanup:  # Service that cleans up old logs and containers once per day
     image: forecasting-base:latest
     container_name: cleanup
