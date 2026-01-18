@@ -13,6 +13,20 @@ jobs:
     strategy:
       matrix:
         python-version: [3.11]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_forecasting_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5       
 
     steps:
     - name: Checkout code
@@ -71,12 +85,20 @@ jobs:
       run: |
         flake8 . --count --ignore=E203,W503,E501,E701,C901,W504,E704 --show-source --statistics
 
-    - name: Run tests with coverage
+    - name: Run unit tests with coverage
       run: |
         export PYTHONPATH=${{ github.workspace }}
         coverage run --source=forecasting_engine -m pytest test/unit
         coverage report -m
         coverage xml
+  
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:password@localhost:5432/test_forecasting_db
+      run: |
+        # Wait for Postgres
+        until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
+        PYTHONPATH=${{ github.workspace }} pytest --asyncio-mode=auto test/integration/
       
     - name: Fix coverage paths for CI
       run: |
