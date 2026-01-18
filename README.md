@@ -128,6 +128,10 @@ docker exec -it forecasting-tasks python forecasting_engine/tasks/run_single_for
 
 ## Running tests
 
+The test suite includes both unit tests and integration tests. Unit tests use mocks and don't require external services. Integration tests use a real PostgreSQL database running in a Docker container.
+
+To run all tests (unit + integration):
+
 ```bash
 pytest test
 ```
@@ -136,6 +140,18 @@ To run tests and also check coverage:
 
 ```bash
 coverage run --source=forecasting_engine -m pytest test/ && coverage report -m
+```
+
+**Note:** Integration tests require Docker to be running. If Docker is not available, integration tests will be automatically skipped with a helpful message. To run integration tests:
+1. Start Docker Desktop (or ensure Docker daemon is running)
+2. Start a docker container with
+```
+docker run --name forecasting-test-db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=test_forecasting_db \
+  -p 5432:5432 \
+  -d postgres:15
 ```
 
 ## Setting up pre-commit
