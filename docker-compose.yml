@@ -81,23 +81,3 @@ services:
       sh -c "echo '0 3 * * * python -m forecasting_engine.tasks.run_nonleaf_forecasts' > /crontab &&
              supercronic /crontab"
     restart: always
-
-  cleanup:  # Service that cleans up old logs and containers once per day
-    image: forecasting-base:latest
-    container_name: cleanup
-    env_file:
-      - .env
-    volumes:
-      - ./forecasting_engine:/app/forecasting_engine
-      - /tmp:/tmp                # mount host /tmp
-      - /var/log:/var/log        # mount host logs
-      - /var/run/docker.sock:/var/run/docker.sock  # allow Docker cleanup
-    working_dir: /app
-    command: >
-      sh -c "
-        echo 'Running cleanup at container start...';
-        /usr/local/bin/cleanup.sh;
-        echo '0 2 * * * /usr/local/bin/cleanup.sh' > /crontab;
-        supercronic /crontab
-      "
-    restart: always
