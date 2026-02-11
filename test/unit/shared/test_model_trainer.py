@@ -87,16 +87,20 @@ class TestPrepareTrainDf:
 
 class TestIsValidAssetToTrain:
     def test_measured_false_returns_false(self, trainer):
-        asset = MagicMock(measured=False, children=[])
+        asset = MagicMock(measured=False, children=[], asset_type="system")
         assert trainer._is_valid_asset_to_train(asset) is False
 
     def test_measured_true_with_children_returns_false(self, trainer):
         child = MagicMock()
-        asset = MagicMock(measured=True, children=[child])
+        asset = MagicMock(measured=True, children=[child], asset_type="system")
         assert trainer._is_valid_asset_to_train(asset) is False
 
-    def test_measured_true_no_children_returns_true(self, trainer):
-        asset = MagicMock(measured=True, children=[])
+    def test_pv_returns_false(self, trainer):
+        asset = MagicMock(measured=False, children=[], asset_type="pv")
+        assert trainer._is_valid_asset_to_train(asset) is False
+
+    def test_measured_true_no_children_nonpv_returns_true(self, trainer):
+        asset = MagicMock(measured=True, children=[], asset_type="system")
         assert trainer._is_valid_asset_to_train(asset) is True
 
 
