@@ -57,14 +57,18 @@ class TrainingManager:
 
         Rules:
         1. If measured = False, return False.
-        2. If measured = True and has children, return False (TODO future: could train with child data).
-        3. If measured = True and has no children, return True.
+        2. If asset has children, return False (TODO future: could train with child data).
+        3. If asset_type is a solar PV, return False
+        4. Otherwise, return True
         """
 
         if not asset.measured:
             return False
 
         if asset.children:
+            return False
+
+        if asset.asset_type == "pv":
             return False
 
         return True
