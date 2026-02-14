@@ -44,7 +44,6 @@ services:
     command: python -m forecasting_engine.services.forecast_poller.main
     restart: always
 
-
   forecast-enqueuer:
     image: forecasting-base:latest
     container_name: forecast-enqueuer
@@ -79,5 +78,18 @@ services:
     working_dir: /app
     command: >
       sh -c "echo '0 3 * * * python -m forecasting_engine.tasks.run_nonleaf_forecasts' > /crontab &&
+             supercronic /crontab"
+    restart: always
+
+  weather-service:  # Runs weather service (assigning site IDs + pulling weather) daily at XXX
+    image: forecasting-base:latest
+    container_name: weather-site-assigner
+    env_file:
+      - .env
+    volumes:
+      - ./forecasting_engine:/app/forecasting_engine
+    working_dir: /app
+    command: >
+      sh -c "echo '0 2 * * * python -m forecasting_engine.services.weather_site_assigner.main' > /crontab &&
              supercronic /crontab"
     restart: always
