@@ -15,11 +15,11 @@ logging.basicConfig(
 
 def get_assets_to_forecast(measurement_io, forecast_run_io, assets_io):
     """
-    Determine which leaf-node assets require a new forecast based on their latest measurements.
+    Determine which non-pv leaf-node assets require a new forecast based on their latest measurements.
 
 
     Steps:
-      1. Retrieve all leaf-node assets (assets with no children) from the database
+      1. Retrieve all non-pv leaf-node assets (assets with no children) from the database
       2. Retrieve the latest measurement timestamp for each asset.
       3. Retrieve the most recent forecast run timestamp for the same set of assets.
       4. Compare timestamps — if a measurement is newer than the last forecast,
@@ -32,12 +32,15 @@ def get_assets_to_forecast(measurement_io, forecast_run_io, assets_io):
     """
 
     leaf_assets = assets_io.list_leaf_assets()
-    leaf_asset_ids = [a.asset_uuid for a in leaf_assets]
 
-    if not leaf_asset_ids:
+    non_pv_leaf_asset_ids = [a.asset_uuid for a in leaf_assets if a.asset_type != "pv"]
+
+    if not non_pv_leaf_asset_ids:
         return {}
 
-    latest_loads = measurement_io.get_latest_load_per_asset(asset_uuids=leaf_asset_ids)
+    latest_loads = measurement_io.get_latest_load_per_asset(
+        asset_uuids=non_pv_leaf_asset_ids
+    )
     if not latest_loads:
         return {}
 

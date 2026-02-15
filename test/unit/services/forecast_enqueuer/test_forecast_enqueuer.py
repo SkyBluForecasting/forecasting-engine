@@ -47,37 +47,41 @@ def asset_times():
 # ----------------------------
 class TestGetAssetsToForecast:
 
-    def test_only_leaf_assets_returned(
-        self, fake_measurement_io, fake_forecast_run_io, fake_assets_io, asset_times
+    def test_returns_only_non_pv_leaf_assets_that_need_forecast(
+        self, fake_measurement_io, fake_forecast_run_io, fake_assets_io
     ):
-        leaf_asset_ids = ["asset2", "asset3"]
+        ts2 = datetime.now(timezone.utc)
+        ts3 = ts2 - timedelta(minutes=10)
+
         fake_assets_io.list_leaf_assets.return_value = [
-            MagicMock(asset_uuid=aid) for aid in leaf_asset_ids
+            MagicMock(asset_uuid="asset2", asset_type="load"),
+            MagicMock(asset_uuid="asset3", asset_type="load"),
+            MagicMock(asset_uuid="asset_pv", asset_type="pv"),
         ]
-        fake_measurement_io.get_latest_load_per_asset.side_effect = (
-            lambda asset_uuids=None: {
-                k: v
-                for k, v in asset_times.items()
-                if k in (asset_uuids or asset_times.keys())
-            }
-        )
+
+        # measurement IO returns measurements for the provided non-pv ids
+        fake_measurement_io.get_latest_load_per_asset.return_value = {
+            "asset2": (ts2, 123.0),
+            "asset3": (ts3, 456.0),
+        }
+
+        # asset2 forecast is older -> include
+        # asset3 no forecast -> include
         fake_forecast_run_io.get_latest_forecast_run_start_time_per_asset.return_value = {
-            "asset2": asset_times["asset2"][0] - timedelta(minutes=5)
+            "asset2": ts2 - timedelta(minutes=5)
         }
 
         result = enqueuer.get_assets_to_forecast(
             fake_measurement_io, fake_forecast_run_io, fake_assets_io
         )
 
-        assert "asset1" not in result  # not leaf
-        assert "asset2" in result  # leaf, forecast outdated
-        assert "asset3" in result  # leaf, no forecast
+        assert result == {"asset2": ts2, "asset3": ts3}
+        assert "asset_pv" not in result
 
-    def test_no_measurements_returns_empty(
+    def test_no_leaf_assets_returns_empty(
         self, fake_measurement_io, fake_forecast_run_io, fake_assets_io
     ):
         fake_assets_io.list_leaf_assets.return_value = []
-        fake_measurement_io.get_latest_load_per_asset.return_value = {}
 
         result = enqueuer.get_assets_to_forecast(
             fake_measurement_io, fake_forecast_run_io, fake_assets_io
@@ -85,11 +89,26 @@ class TestGetAssetsToForecast:
 
         assert result == {}
 
-    def test_leaf_assets_exist_but_no_measurements(
+    def test_only_pv_leaf_assets_returns_empty(
         self, fake_measurement_io, fake_forecast_run_io, fake_assets_io
     ):
-        fake_assets_io.list_leaf_assets.return_value = [MagicMock(asset_uuid="asset1")]
+        fake_assets_io.list_leaf_assets.return_value = [
+            MagicMock(asset_uuid="pv1", asset_type="pv"),
+            MagicMock(asset_uuid="pv2", asset_type="pv"),
+        ]
 
+        result = enqueuer.get_assets_to_forecast(
+            fake_measurement_io, fake_forecast_run_io, fake_assets_io
+        )
+
+        assert result == {}
+
+    def test_leaf_assets_exist_but_no_measurements_returns_empty(
+        self, fake_measurement_io, fake_forecast_run_io, fake_assets_io
+    ):
+        fake_assets_io.list_leaf_assets.return_value = [
+            MagicMock(asset_uuid="asset1", asset_type="load")
+        ]
         fake_measurement_io.get_latest_load_per_asset.return_value = {}
 
         result = enqueuer.get_assets_to_forecast(
@@ -104,12 +123,12 @@ class TestGetAssetsToForecast:
         ts_measurement = datetime.now(timezone.utc)
         ts_forecast = ts_measurement + timedelta(minutes=5)
 
-        fake_assets_io.list_leaf_assets.return_value = [MagicMock(asset_uuid="asset1")]
-
+        fake_assets_io.list_leaf_assets.return_value = [
+            MagicMock(asset_uuid="asset1", asset_type="load")
+        ]
         fake_measurement_io.get_latest_load_per_asset.return_value = {
             "asset1": (ts_measurement, 123.0)
         }
-
         fake_forecast_run_io.get_latest_forecast_run_start_time_per_asset.return_value = {
             "asset1": ts_forecast
         }
