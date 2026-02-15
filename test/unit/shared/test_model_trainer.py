@@ -95,8 +95,9 @@ class TestIsValidAssetToTrain:
         asset = MagicMock(measured=True, children=[child], asset_type="system")
         assert trainer._is_valid_asset_to_train(asset) is False
 
-    def test_pv_returns_false(self, trainer):
-        asset = MagicMock(measured=False, children=[], asset_type="pv")
+    def test_measured_true_no_children_pv_returns_false(self, trainer):
+        # IMPORTANT: measured True + no children ensures we hit the pv check
+        asset = MagicMock(measured=True, children=[], asset_type="pv")
         assert trainer._is_valid_asset_to_train(asset) is False
 
     def test_measured_true_no_children_nonpv_returns_true(self, trainer):
@@ -194,22 +195,30 @@ class TestTrainAllAssets:
 
     @patch("forecasting_engine.shared.model_trainer.TrainingManager.train_asset")
     def test_trains_multiple_assets_only_valid(self, mock_train_asset, trainer):
-        asset1 = MagicMock(asset_uuid="A", measured=True, children=[])
-        asset2 = MagicMock(asset_uuid="B", measured=False, children=[])
-        asset3 = MagicMock(asset_uuid="C", measured=True, children=[MagicMock()])
+        asset1 = MagicMock(
+            asset_uuid="A", measured=True, children=[], asset_type="system"
+        )
+        asset2 = MagicMock(
+            asset_uuid="B", measured=False, children=[], asset_type="system"
+        )
+        asset3 = MagicMock(
+            asset_uuid="C", measured=True, children=[MagicMock()], asset_type="system"
+        )
+        asset4 = MagicMock(asset_uuid="D", measured=True, children=[], asset_type="pv")
 
-        trainer.assets_io.list_assets.return_value = [asset1, asset2, asset3]
+        trainer.assets_io.list_assets.return_value = [asset1, asset2, asset3, asset4]
 
         with patch.object(mt.logger, "info") as mock_log_info:
             trainer.train_all_assets()
 
-        # Only the valid asset (asset1) should have train_asset called
+        # Only A should train
         mock_train_asset.assert_called_once_with("A")
 
-        # Check that skipped assets are logged
+        # Check that skipped assets are logged (including pv)
         log_messages = [args[0] for args, kwargs in mock_log_info.call_args_list]
         assert any("Skipping training for asset B" in msg for msg in log_messages)
         assert any("Skipping training for asset C" in msg for msg in log_messages)
+        assert any("Skipping training for asset D" in msg for msg in log_messages)
 
     def test_train_all_assets_logs_exception(self, trainer):
         # Simulate one asset that fails training
