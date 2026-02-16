@@ -28,7 +28,9 @@ class WeatherSitesIO(BaseIO):
         """Return True if the weather site exists."""
         return self.get_site(weather_site_id) is not None
 
-    def upsert_site(self, weather_site_id: str, site_lat: float, site_lon: float) -> bool:
+    def upsert_site(
+        self, weather_site_id: str, site_lat: float, site_long: float
+    ) -> bool:
         """
         Idempotently insert a weather site.
 
@@ -42,7 +44,7 @@ class WeatherSitesIO(BaseIO):
         site = WeatherSite(
             weather_site_id=weather_site_id,
             site_lat=site_lat,
-            site_lon=site_lon,
+            site_long=site_long,
         )
         self.session.add(site)
         self.session.commit()
@@ -63,7 +65,7 @@ class WeatherSitesIO(BaseIO):
                 {
                     "weather_site_id": s.weather_site_id,
                     "site_lat": s.site_lat,
-                    "site_lon": s.site_lon,
+                    "site_long": s.site_long,
                 }
                 for s in sites
             ]
