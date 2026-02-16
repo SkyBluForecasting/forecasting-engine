@@ -81,15 +81,15 @@ services:
              supercronic /crontab"
     restart: always
 
-  weather-service:  # Runs weather service (assigning site IDs + pulling weather) daily at XXX
+  weather-service:  # Runs weather service daily at 00:30 UTC (7:30 pm ET / 8:30 EST)
     image: forecasting-base:latest
-    container_name: weather-site-assigner
+    container_name: weather-service
     env_file:
       - .env
     volumes:
       - ./forecasting_engine:/app/forecasting_engine
     working_dir: /app
     command: >
-      sh -c "echo '0 2 * * * python -m forecasting_engine.services.weather_site_assigner.main' > /crontab &&
+      sh -c "echo '30 0 * * * python -m forecasting_engine.services.weather_service.main' > /crontab &&
              supercronic /crontab"
     restart: always
