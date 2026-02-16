@@ -36,10 +36,6 @@ EXPOSE 5050
 # Default command (can be overridden in docker-compose)
 CMD ["tail", "-f", "/dev/null"]
 
-# Copy cleanup script into the image and make executable
-COPY forecasting_engine/tasks/cleanup.sh /usr/local/bin/cleanup.sh
-RUN chmod +x /usr/local/bin/cleanup.sh
-
 # Setup supercronic to run services on schedules
 RUN apt-get update && apt-get install -y curl && \
     curl -L -o /usr/local/bin/supercronic https://github.com/aptible/supercronic/releases/download/v0.2.24/supercronic-linux-amd64 && \
