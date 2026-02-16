@@ -7,7 +7,7 @@ from forecasting_engine.shared.logger_factory import get_logger
 logger = get_logger(__name__)
 
 
-def main():  # pragma: no cover
+def main():
     """
     Main entry point for weather service.
     """

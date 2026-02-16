@@ -143,10 +143,9 @@ class AssetsIO(BaseIO):
         asset = self.get_asset(asset_uuid)
         if not asset:
             raise ValueError(f"Asset {asset_uuid} not found")
-        
+
         asset.weather_site_id = weather_site_id
         self.session.commit()
-
 
     def list_assets_with_coords(
         self,
