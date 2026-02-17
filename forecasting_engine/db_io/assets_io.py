@@ -131,3 +131,37 @@ class AssetsIO(BaseIO):
             query = query.filter(Asset.asset_type == asset_type)
 
         return query.scalar() or 0
+
+    def update_weather_site_id(self, asset_uuid: str, weather_site_id: str) -> None:
+        """
+        Update the weather_site_id for a given asset.
+
+        Args:
+            asset_uuid: The UUID of the asset to update
+            weather_site_id: The weather site ID to assign
+        """
+        asset = self.get_asset(asset_uuid)
+        if not asset:
+            raise ValueError(f"Asset {asset_uuid} not found")
+
+        asset.weather_site_id = weather_site_id
+        self.session.commit()
+
+    def list_assets_with_coords(
+        self,
+        asset_type: Optional[str] = None,
+        missing_weather_site_only: bool = False,
+    ) -> List[Asset]:
+        query = (
+            self.session.query(Asset)
+            .filter(Asset.latitude.isnot(None))
+            .filter(Asset.longitude.isnot(None))
+        )
+
+        if asset_type:
+            query = query.filter(Asset.asset_type == asset_type)
+
+        if missing_weather_site_only:
+            query = query.filter(Asset.weather_site_id.is_(None))
+
+        return query.all()

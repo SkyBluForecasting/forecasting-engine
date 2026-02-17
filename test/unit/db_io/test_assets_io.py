@@ -1,106 +1,55 @@
 import pytest
 import pandas as pd
 
-from forecasting_db.models import Asset
-from forecasting_engine.db_io.assets_io import AssetsIO
 
-# ----------------------------
-# list_assets tests
-# ----------------------------
-
-
-def test_list_assets_returns_all(in_memory_session):
-    """Should return all assets if no type filter is given."""
-    asset1 = Asset(
-        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
-    )
-    asset2 = Asset(
-        asset_uuid="A2",
-        asset_type="distribution_substation",
-        name="Asset 2",
-        depth=0,
-        measured=True,
-    )
-    in_memory_session.add_all([asset1, asset2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    assets = io.list_assets()
-
-    uuids = {a.asset_uuid for a in assets}
-    assert uuids == {"A1", "A2"}
-
-
-def test_list_assets_filters_by_type(in_memory_session):
-    """Should filter assets by asset_type."""
-    asset1 = Asset(
-        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
-    )
-    asset2 = Asset(
-        asset_uuid="A2",
-        asset_type="distribution_substation",
-        name="Asset 2",
-        depth=0,
-        measured=True,
-    )
-    in_memory_session.add_all([asset1, asset2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    assets = io.list_assets(asset_type="system")
-
-    uuids = [a.asset_uuid for a in assets]
-    assert uuids == ["A1"]
+def uuids(rows):
+    return [r.asset_uuid for r in rows]
 
 
 # ----------------------------
-# get_asset tests
+# list_assets / get_asset
 # ----------------------------
 
 
-def test_get_asset_found(in_memory_session):
-    """Should return a single asset if found."""
-    asset = Asset(
-        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
-    )
-    in_memory_session.add(asset)
-    in_memory_session.flush()
+def test_list_assets_returns_all(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1", asset_type="system")
+    asset_factory(asset_uuid="A2", asset_type="distribution_substation")
 
-    io = AssetsIO(in_memory_session)
-    result = io.get_asset("A1")
-
-    assert result.asset_uuid == "A1"
+    assert set(uuids(assets_io.list_assets())) == {"A1", "A2"}
 
 
-def test_get_asset_not_found(in_memory_session):
-    """Should return None if asset not found."""
-    io = AssetsIO(in_memory_session)
-    result = io.get_asset("NONEXISTENT")
+@pytest.mark.parametrize(
+    "filter_type, expected",
+    [
+        ("system", ["A1"]),
+        ("distribution_substation", ["A2"]),
+    ],
+)
+def test_list_assets_filters_by_type(asset_factory, assets_io, filter_type, expected):
+    asset_factory(asset_uuid="A1", asset_type="system")
+    asset_factory(asset_uuid="A2", asset_type="distribution_substation")
 
-    assert result is None
+    assert uuids(assets_io.list_assets(asset_type=filter_type)) == expected
+
+
+def test_get_asset_found(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1")
+    assert assets_io.get_asset("A1").asset_uuid == "A1"
+
+
+def test_get_asset_not_found(assets_io):
+    assert assets_io.get_asset("NOPE") is None
 
 
 # ----------------------------
-# to_df tests
+# to_df / from_df
 # ----------------------------
 
 
-def test_to_df_returns_dataframe(in_memory_session):
-    """Should convert assets to a DataFrame."""
-    asset = Asset(
-        asset_uuid="A1",
-        name="Asset 1",
-        asset_type="system",
-        capacity_kw=100,
-        depth=0,
-        measured=True,
-        parent_uuid=None,
-    )
-    in_memory_session.add(asset)
-    in_memory_session.flush()
+def test_to_df_returns_dataframe(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1", name="Asset 1", asset_type="system", capacity_kw=100)
 
-    io = AssetsIO(in_memory_session)
-    df = io.to_df()
+    df = assets_io.to_df()
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape[0] == 1
@@ -113,526 +62,301 @@ def test_to_df_returns_dataframe(in_memory_session):
     }
 
 
-def test_to_df_empty_returns_empty_df(in_memory_session):
-    """Should return empty DataFrame when no assets found."""
-    io = AssetsIO(in_memory_session)
-    df = io.to_df()
-    assert df.empty
+def test_to_df_empty_returns_empty_df(assets_io):
+    assert assets_io.to_df().empty
 
 
-def test_to_df_filters_by_type(in_memory_session):
-    """Should call list_assets with asset_type when provided."""
-    asset1 = Asset(
-        asset_uuid="A1", asset_type="system", name="Asset 1", depth=0, measured=True
-    )
-    asset2 = Asset(
-        asset_uuid="A2",
-        asset_type="distribution_substation",
-        name="Asset 2",
-        depth=0,
-        measured=True,
-    )
-    in_memory_session.add_all([asset1, asset2])
-    in_memory_session.flush()
+def test_to_df_filters_by_type(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1", asset_type="system")
+    asset_factory(asset_uuid="A2", asset_type="distribution_substation")
 
-    io = AssetsIO(in_memory_session)
-    df = io.to_df(asset_type="distribution_substation")
-
-    uuids = df["asset_uuid"].tolist()
-    assert uuids == ["A2"]
+    df = assets_io.to_df(asset_type="distribution_substation")
+    assert df["asset_uuid"].tolist() == ["A2"]
 
 
-# ----------------------------
-# from_df tests
-# ----------------------------
-
-
-def test_from_df_not_implemented(in_memory_session):
-    """Should raise NotImplementedError."""
-    io = AssetsIO(in_memory_session)
-    df = pd.DataFrame()
+def test_from_df_not_implemented(assets_io):
     with pytest.raises(NotImplementedError, match="from_df"):
-        io.from_df(df)
+        assets_io.from_df(pd.DataFrame())
 
 
 # ----------------------------
-# list_leaf_assets tests
+# leaf / non-leaf helpers
 # ----------------------------
 
 
-def test_list_leaf_assets_basic(in_memory_session):
-    # Hierarchy: PARENT1 -> CHILD1 -> LEAF1
-    parent = Asset(
-        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
+def build_chain(asset_factory, prefix, asset_type="system", depth0=0):
+    """
+    prefix0 -> prefix1 -> prefix2
+    Returns (p0, c1, l2)
+    """
+    p0 = asset_factory(asset_uuid=f"{prefix}0", asset_type=asset_type, depth=depth0)
+    c1 = asset_factory(
+        asset_uuid=f"{prefix}1",
+        asset_type=asset_type,
+        depth=depth0 + 1,
+        parent_uuid=p0.asset_uuid,
     )
-    child = Asset(
-        asset_uuid="CHILD1",
-        asset_type="system",
-        name="Child",
-        depth=1,
-        measured=True,
-        parent_uuid="PARENT1",
+    l2 = asset_factory(
+        asset_uuid=f"{prefix}2",
+        asset_type=asset_type,
+        depth=depth0 + 2,
+        parent_uuid=c1.asset_uuid,
     )
-    leaf = Asset(
-        asset_uuid="LEAF1",
-        asset_type="system",
-        name="Leaf",
-        depth=2,
-        measured=True,
-        parent_uuid="CHILD1",
-    )
-
-    in_memory_session.add_all([parent, child, leaf])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_leaf_assets()
-
-    # Only LEAF1 has no children → leaf node
-    leaf_uuids = [a.asset_uuid for a in result]
-    assert leaf_uuids == ["LEAF1"]
-
-
-def test_list_leaf_assets_top_level_leaf(in_memory_session):
-    # Top-level leaf (no parent)
-    leaf = Asset(
-        asset_uuid="LEAF1", asset_type="system", name="Leaf", depth=0, measured=True
-    )
-    in_memory_session.add(leaf)
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_leaf_assets()
-
-    assert [a.asset_uuid for a in result] == ["LEAF1"]
-
-
-def test_list_leaf_assets_multiple_leaves(in_memory_session):
-    # Multiple leaves
-    parent = Asset(
-        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
-    )
-    leaf1 = Asset(
-        asset_uuid="LEAF1",
-        asset_type="system",
-        name="Leaf1",
-        depth=1,
-        measured=True,
-        parent_uuid="PARENT1",
-    )
-    leaf2 = Asset(
-        asset_uuid="LEAF2",
-        asset_type="distribution_substation",
-        name="Leaf2",
-        depth=0,
-        measured=True,
-    )
-    in_memory_session.add_all([parent, leaf1, leaf2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_leaf_assets()
-
-    leaf_uuids = {a.asset_uuid for a in result}
-    assert leaf_uuids == {"LEAF1", "LEAF2"}
-
-
-def test_list_leaf_assets_filter_by_type(in_memory_session):
-    parent = Asset(
-        asset_uuid="PARENT1", asset_type="system", name="Parent", depth=0, measured=True
-    )
-    leaf1 = Asset(
-        asset_uuid="LEAF1",
-        asset_type="system",
-        name="Leaf1",
-        depth=1,
-        measured=True,
-        parent_uuid="PARENT1",
-    )
-    leaf2 = Asset(
-        asset_uuid="LEAF2",
-        asset_type="distribution_substation",
-        name="Leaf2",
-        depth=0,
-        measured=True,
-    )
-    in_memory_session.add_all([parent, leaf1, leaf2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_leaf_assets(asset_type="system")
-
-    # Only LEAF1 is of type "system"
-    leaf_uuids = [a.asset_uuid for a in result]
-    assert leaf_uuids == ["LEAF1"]
+    return p0, c1, l2
 
 
 # ----------------------------
-# list_non_leaf_assets tests
+# list_leaf_assets
 # ----------------------------
 
 
-def test_list_non_leaf_assets_basic(in_memory_session):
-    """
-    Hierarchy:
-        PARENT (depth 0)
-          -> CHILD (depth 1)
-              -> LEAF (depth 2)
+def test_list_leaf_assets_basic(asset_factory, assets_io):
+    # PARENT -> CHILD -> LEAF
+    build_chain(asset_factory, "N")
+    assert uuids(assets_io.list_leaf_assets()) == ["N2"]
 
-    Non-leaf assets should be: PARENT, CHILD
-    """
-    parent = Asset(
-        asset_uuid="PARENT",
-        asset_type="system",
-        name="Parent",
-        depth=0,
-        measured=True,
+
+def test_list_leaf_assets_top_level_leaf(asset_factory, assets_io):
+    asset_factory(asset_uuid="LEAF", parent_uuid=None, depth=0)
+    assert uuids(assets_io.list_leaf_assets()) == ["LEAF"]
+
+
+def test_list_leaf_assets_multiple_leaves(asset_factory, assets_io):
+    # Chain leaf + standalone leaf
+    build_chain(asset_factory, "A")
+    asset_factory(
+        asset_uuid="B0", asset_type="distribution_substation", depth=0, parent_uuid=None
     )
-    child = Asset(
-        asset_uuid="CHILD",
-        asset_type="system",
-        name="Child",
-        depth=1,
-        measured=True,
-        parent_uuid="PARENT",
-    )
-    leaf = Asset(
-        asset_uuid="LEAF",
-        asset_type="system",
-        name="Leaf",
-        depth=2,
-        measured=True,
-        parent_uuid="CHILD",
-    )
-
-    in_memory_session.add_all([parent, child, leaf])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_non_leaf_assets()
-
-    non_leaf_uuids = {a.asset_uuid for a in result}
-    assert non_leaf_uuids == {"PARENT", "CHILD"}
+    assert set(uuids(assets_io.list_leaf_assets())) == {"A2", "B0"}
 
 
-def test_list_non_leaf_assets_no_children_returns_empty(in_memory_session):
-    """If there are no parent-child links, there are no non-leaf assets."""
-    a1 = Asset(asset_uuid="A1", asset_type="system", name="A1", depth=0, measured=True)
-    a2 = Asset(asset_uuid="A2", asset_type="system", name="A2", depth=0, measured=True)
-    in_memory_session.add_all([a1, a2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_non_leaf_assets()
-
-    assert result == []
-
-
-def test_list_non_leaf_assets_filter_by_type(in_memory_session):
-    """
-    If filtering by type, return only non-leaf assets of that type (not their children).
-    """
-    parent_system = Asset(
-        asset_uuid="P_SYSTEM",
-        asset_type="system",
-        name="Parent System",
-        depth=0,
-        measured=True,
-    )
-    child_system = Asset(
-        asset_uuid="C_SYSTEM",
-        asset_type="system",
-        name="Child System",
-        depth=1,
-        measured=True,
-        parent_uuid="P_SYSTEM",
-    )
-
-    parent_sub = Asset(
-        asset_uuid="P_SUB",
-        asset_type="distribution_substation",
-        name="Parent Sub",
-        depth=0,
-        measured=True,
-    )
-    child_sub = Asset(
-        asset_uuid="C_SUB",
-        asset_type="distribution_substation",
-        name="Child Sub",
-        depth=1,
-        measured=True,
-        parent_uuid="P_SUB",
-    )
-
-    in_memory_session.add_all([parent_system, child_system, parent_sub, child_sub])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_non_leaf_assets(asset_type="system")
-
-    # Only P_SYSTEM is a non-leaf of type system
-    assert [a.asset_uuid for a in result] == ["P_SYSTEM"]
+def test_list_leaf_assets_filter_by_type(asset_factory, assets_io):
+    build_chain(asset_factory, "SYS", asset_type="system")
+    asset_factory(asset_uuid="SUB0", asset_type="distribution_substation", depth=0)
+    assert uuids(assets_io.list_leaf_assets(asset_type="system")) == ["SYS2"]
 
 
 # ----------------------------
-# list_non_leaf_assets_at_depth tests
+# list_non_leaf_assets
 # ----------------------------
 
 
-def test_list_non_leaf_assets_at_depth_returns_only_matching_depth(in_memory_session):
-    """
-    Build two non-leaf assets at different depths:
-
-    P0 (depth 0) -> C1 (depth 1) -> L2 (depth 2)
-    """
-    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
-    c1 = Asset(
-        asset_uuid="C1",
-        asset_type="system",
-        name="C1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-    l2 = Asset(
-        asset_uuid="L2",
-        asset_type="system",
-        name="L2",
-        depth=2,
-        measured=True,
-        parent_uuid="C1",
-    )
-
-    in_memory_session.add_all([p0, c1, l2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-
-    # Depth 0 non-leaf should be P0
-    result0 = io.list_non_leaf_assets_at_depth(0)
-    assert [a.asset_uuid for a in result0] == ["P0"]
-
-    # Depth 1 non-leaf should be C1
-    result1 = io.list_non_leaf_assets_at_depth(1)
-    assert [a.asset_uuid for a in result1] == ["C1"]
-
-    # Depth 2 is leaf; should be empty
-    result2 = io.list_non_leaf_assets_at_depth(2)
-    assert result2 == []
+def test_list_non_leaf_assets_basic(asset_factory, assets_io):
+    p0, c1, _ = build_chain(asset_factory, "X")
+    assert set(uuids(assets_io.list_non_leaf_assets())) == {
+        p0.asset_uuid,
+        c1.asset_uuid,
+    }
 
 
-def test_list_non_leaf_assets_at_depth_orders_by_uuid(in_memory_session):
-    """
-    Ensure ordering is deterministic: order_by Asset.asset_uuid.asc().
-    """
-    # P0 has two children at depth 1, both non-leaf (each has its own child)
-    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
-
-    # These two are at depth=1 and each has a child -> both are non-leaf
-    b1 = Asset(
-        asset_uuid="B1",
-        asset_type="system",
-        name="B1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-    a1 = Asset(
-        asset_uuid="A1",
-        asset_type="system",
-        name="A1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-
-    b2 = Asset(
-        asset_uuid="B2",
-        asset_type="system",
-        name="B2",
-        depth=2,
-        measured=True,
-        parent_uuid="B1",
-    )
-    a2 = Asset(
-        asset_uuid="A2",
-        asset_type="system",
-        name="A2",
-        depth=2,
-        measured=True,
-        parent_uuid="A1",
-    )
-
-    in_memory_session.add_all([p0, b1, a1, b2, a2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    result = io.list_non_leaf_assets_at_depth(1)
-
-    # Ordered by asset_uuid asc: A1 then B1
-    assert [a.asset_uuid for a in result] == ["A1", "B1"]
+def test_list_non_leaf_assets_no_children_returns_empty(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1")
+    asset_factory(asset_uuid="A2")
+    assert assets_io.list_non_leaf_assets() == []
 
 
-def test_list_non_leaf_assets_at_depth_filter_by_type(in_memory_session):
-    """
-    Same depth, but different types; filter should return only matching type.
-    """
-    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
+def test_list_non_leaf_assets_filter_by_type(asset_factory, assets_io):
+    build_chain(asset_factory, "SYS", asset_type="system")
+    build_chain(asset_factory, "SUB", asset_type="distribution_substation")
 
-    sys_parent = Asset(
-        asset_uuid="SYS1",
-        asset_type="system",
-        name="SYS1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-    sys_child = Asset(
-        asset_uuid="SYS2",
-        asset_type="system",
-        name="SYS2",
-        depth=2,
-        measured=True,
-        parent_uuid="SYS1",
-    )
+    assert set(uuids(assets_io.list_non_leaf_assets(asset_type="system"))) == {
+        "SYS0",
+        "SYS1",
+    }
 
-    sub_parent = Asset(
+
+# ----------------------------
+# list_non_leaf_assets_at_depth
+# ----------------------------
+
+
+def test_list_non_leaf_assets_at_depth_returns_only_matching_depth(
+    asset_factory, assets_io
+):
+    build_chain(asset_factory, "D")
+
+    assert uuids(assets_io.list_non_leaf_assets_at_depth(0)) == ["D0"]
+    assert uuids(assets_io.list_non_leaf_assets_at_depth(1)) == ["D1"]
+    assert assets_io.list_non_leaf_assets_at_depth(2) == []
+
+
+def test_list_non_leaf_assets_at_depth_orders_by_uuid(asset_factory, assets_io):
+    # P0 -> A1 -> A2 and P0 -> B1 -> B2
+    p0 = asset_factory(asset_uuid="P0", depth=0)
+    a1 = asset_factory(asset_uuid="A1", depth=1, parent_uuid=p0.asset_uuid)
+    b1 = asset_factory(asset_uuid="B1", depth=1, parent_uuid=p0.asset_uuid)
+    asset_factory(asset_uuid="A2", depth=2, parent_uuid=a1.asset_uuid)
+    asset_factory(asset_uuid="B2", depth=2, parent_uuid=b1.asset_uuid)
+
+    assert uuids(assets_io.list_non_leaf_assets_at_depth(1)) == ["A1", "B1"]
+
+
+def test_list_non_leaf_assets_at_depth_filter_by_type(asset_factory, assets_io):
+    p0 = asset_factory(asset_uuid="P0", asset_type="system", depth=0)
+    sub1 = asset_factory(
         asset_uuid="SUB1",
         asset_type="distribution_substation",
-        name="SUB1",
         depth=1,
-        measured=True,
-        parent_uuid="P0",
+        parent_uuid=p0.asset_uuid,
     )
-    sub_child = Asset(
+    asset_factory(
         asset_uuid="SUB2",
         asset_type="distribution_substation",
-        name="SUB2",
         depth=2,
-        measured=True,
-        parent_uuid="SUB1",
+        parent_uuid=sub1.asset_uuid,
     )
 
-    in_memory_session.add_all([p0, sys_parent, sys_child, sub_parent, sub_child])
-    in_memory_session.flush()
+    sys1 = asset_factory(
+        asset_uuid="SYS1", asset_type="system", depth=1, parent_uuid=p0.asset_uuid
+    )
+    asset_factory(
+        asset_uuid="SYS2", asset_type="system", depth=2, parent_uuid=sys1.asset_uuid
+    )
 
-    io = AssetsIO(in_memory_session)
-    result = io.list_non_leaf_assets_at_depth(1, asset_type="distribution_substation")
-
-    assert [a.asset_uuid for a in result] == ["SUB1"]
+    assert uuids(
+        assets_io.list_non_leaf_assets_at_depth(1, asset_type="distribution_substation")
+    ) == ["SUB1"]
 
 
 # ----------------------------
-# get_max_depth_non_leaf tests
+# get_max_depth_non_leaf
 # ----------------------------
 
 
-def test_get_max_depth_non_leaf_basic(in_memory_session):
-    """
-    P0 (depth 0) -> C1 (depth 1) -> L2 (depth 2)
-
-    Non-leaf assets are P0 (0) and C1 (1). Max non-leaf depth = 1.
-    """
-    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
-    c1 = Asset(
-        asset_uuid="C1",
-        asset_type="system",
-        name="C1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-    l2 = Asset(
-        asset_uuid="L2",
-        asset_type="system",
-        name="L2",
-        depth=2,
-        measured=True,
-        parent_uuid="C1",
-    )
-
-    in_memory_session.add_all([p0, c1, l2])
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    assert io.get_max_depth_non_leaf() == 1
+def test_get_max_depth_non_leaf_basic(asset_factory, assets_io):
+    build_chain(asset_factory, "M")
+    assert assets_io.get_max_depth_non_leaf() == 1
 
 
-def test_get_max_depth_non_leaf_empty_returns_zero(in_memory_session):
-    """No parent-child edges => no non-leaf => should return 0 per implementation."""
-    leaf = Asset(
-        asset_uuid="LEAF", asset_type="system", name="Leaf", depth=5, measured=True
-    )
-    in_memory_session.add(leaf)
-    in_memory_session.flush()
-
-    io = AssetsIO(in_memory_session)
-    assert io.get_max_depth_non_leaf() == 0
+def test_get_max_depth_non_leaf_empty_returns_zero(asset_factory, assets_io):
+    asset_factory(asset_uuid="LEAF", depth=5)  # no children anywhere
+    assert assets_io.get_max_depth_non_leaf() == 0
 
 
-def test_get_max_depth_non_leaf_filter_by_type(in_memory_session):
-    """
-    Two hierarchies of different types:
-
-    system: P0 (0) -> C1 (1) -> L2 (2) => max non-leaf depth = 1
-    substation: PS (0) -> CS (1) -> GS (2) -> LS (3) => non-leaf depths 0,1,2 => max = 2
-    """
-    # system chain
-    p0 = Asset(asset_uuid="P0", asset_type="system", name="P0", depth=0, measured=True)
-    c1 = Asset(
-        asset_uuid="C1",
-        asset_type="system",
-        name="C1",
-        depth=1,
-        measured=True,
-        parent_uuid="P0",
-    )
-    l2 = Asset(
-        asset_uuid="L2",
-        asset_type="system",
-        name="L2",
-        depth=2,
-        measured=True,
-        parent_uuid="C1",
-    )
-
-    # distribution_substation chain (longer)
-    ps0 = Asset(
-        asset_uuid="PS0",
-        asset_type="distribution_substation",
-        name="PS0",
-        depth=0,
-        measured=True,
-    )
-    cs1 = Asset(
+def test_get_max_depth_non_leaf_filter_by_type(asset_factory, assets_io):
+    build_chain(asset_factory, "SYS", asset_type="system")  # max non-leaf depth 1
+    # Longer chain: depths 0,1,2 are non-leaf => max 2
+    ps0 = asset_factory(asset_uuid="PS0", asset_type="distribution_substation", depth=0)
+    cs1 = asset_factory(
         asset_uuid="CS1",
         asset_type="distribution_substation",
-        name="CS1",
         depth=1,
-        measured=True,
-        parent_uuid="PS0",
+        parent_uuid=ps0.asset_uuid,
     )
-    gs2 = Asset(
+    gs2 = asset_factory(
         asset_uuid="GS2",
         asset_type="distribution_substation",
-        name="GS2",
         depth=2,
-        measured=True,
-        parent_uuid="CS1",
+        parent_uuid=cs1.asset_uuid,
     )
-    ls3 = Asset(
+    asset_factory(
         asset_uuid="LS3",
         asset_type="distribution_substation",
-        name="LS3",
         depth=3,
-        measured=True,
-        parent_uuid="GS2",
+        parent_uuid=gs2.asset_uuid,
     )
 
-    in_memory_session.add_all([p0, c1, l2, ps0, cs1, gs2, ls3])
-    in_memory_session.flush()
+    assert assets_io.get_max_depth_non_leaf(asset_type="system") == 1
+    assert assets_io.get_max_depth_non_leaf(asset_type="distribution_substation") == 2
 
-    io = AssetsIO(in_memory_session)
 
-    assert io.get_max_depth_non_leaf(asset_type="system") == 1
-    assert io.get_max_depth_non_leaf(asset_type="distribution_substation") == 2
+# ----------------------------
+# update_weather_site_id
+# ----------------------------
+
+
+def test_update_weather_site_id_sets_value_and_commits(asset_factory, assets_io):
+    asset_factory(asset_uuid="A1", weather_site_id=None)
+
+    assets_io.update_weather_site_id("A1", "SITE_123")
+    assert assets_io.get_asset("A1").weather_site_id == "SITE_123"
+
+
+def test_update_weather_site_id_raises_if_asset_missing(assets_io):
+    with pytest.raises(ValueError, match="Asset DOES_NOT_EXIST not found"):
+        assets_io.update_weather_site_id("DOES_NOT_EXIST", "SITE_123")
+
+
+# ----------------------------
+# list_assets_with_coords
+# ----------------------------
+
+
+def test_list_assets_with_coords_returns_only_assets_with_lat_lon(
+    asset_factory, assets_io
+):
+    asset_factory(asset_uuid="A_WITH", latitude=43.0, longitude=-79.0)
+    asset_factory(asset_uuid="A_NOLAT", latitude=None, longitude=-79.0)
+    asset_factory(asset_uuid="A_NOLON", latitude=43.0, longitude=None)
+
+    assert uuids(assets_io.list_assets_with_coords()) == ["A_WITH"]
+
+
+def test_list_assets_with_coords_filters_by_type(asset_factory, assets_io):
+    asset_factory(
+        asset_uuid="SYS1", asset_type="system", latitude=43.1, longitude=-79.1
+    )
+    asset_factory(
+        asset_uuid="SUB1",
+        asset_type="distribution_substation",
+        latitude=43.2,
+        longitude=-79.2,
+    )
+
+    assert uuids(
+        assets_io.list_assets_with_coords(asset_type="distribution_substation")
+    ) == ["SUB1"]
+
+
+@pytest.mark.parametrize(
+    "missing_only, expected", [(True, ["A_MISSING"]), (False, {"A_MISSING", "A_HAS"})]
+)
+def test_list_assets_with_coords_missing_weather_site_only(
+    asset_factory, assets_io, missing_only, expected
+):
+    asset_factory(
+        asset_uuid="A_MISSING", latitude=43.3, longitude=-79.3, weather_site_id=None
+    )
+    asset_factory(
+        asset_uuid="A_HAS", latitude=43.4, longitude=-79.4, weather_site_id="SITE_X"
+    )
+
+    result = assets_io.list_assets_with_coords(missing_weather_site_only=missing_only)
+    got = uuids(result)
+
+    if missing_only:
+        assert got == expected
+    else:
+        assert set(got) == expected
+
+
+def test_list_assets_with_coords_type_filter_and_missing_weather_site_only_combined(
+    asset_factory, assets_io
+):
+    asset_factory(
+        asset_uuid="SYS_MISSING",
+        asset_type="system",
+        latitude=43.5,
+        longitude=-79.5,
+        weather_site_id=None,
+    )
+    asset_factory(
+        asset_uuid="SUB_MISSING",
+        asset_type="distribution_substation",
+        latitude=43.6,
+        longitude=-79.6,
+        weather_site_id=None,
+    )
+    asset_factory(
+        asset_uuid="SYS_HAS",
+        asset_type="system",
+        latitude=43.7,
+        longitude=-79.7,
+        weather_site_id="SITE_Y",
+    )
+
+    assert uuids(
+        assets_io.list_assets_with_coords(
+            asset_type="system", missing_weather_site_only=True
+        )
+    ) == ["SYS_MISSING"]
