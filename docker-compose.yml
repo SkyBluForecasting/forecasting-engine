@@ -65,7 +65,7 @@ services:
     working_dir: /app
     command: >
       sh -c "echo '0 4 * * 0 python -m forecasting_engine.services.model_trainer.main' > /crontab &&
-             supercronic /crontab"
+             supercronic --passthrough-logs /crontab"
     restart: always
 
   nonleaf-forecast-runner:  # Runs non-leaf forecasts bottom-up daily at 03:00 UTC
@@ -78,7 +78,7 @@ services:
     working_dir: /app
     command: >
       sh -c "echo '0 3 * * * python -m forecasting_engine.tasks.run_nonleaf_forecasts' > /crontab &&
-             supercronic /crontab"
+             supercronic --passthrough-logs /crontab"
     restart: always
 
   weather-service:  # Runs weather service daily at 00:30 UTC (7:30 pm ET / 8:30 EST)
@@ -91,5 +91,5 @@ services:
     working_dir: /app
     command: >
       sh -c "echo '30 0 * * * python -m forecasting_engine.services.weather_service.main' > /crontab &&
-             supercronic /crontab"
+             supercronic --passthrough-logs /crontab"
     restart: always
