@@ -11,13 +11,17 @@ forecasting_engine/  # Included in deployments
 ├── services/         # Long-running services (Dockerized)
 │   ├── forecast_enqueuer/  # Checks DB, enqueues SQS forecast requests
 │   ├── forecast_poller/    # Polls SQS and runs forecasts
-│   └── model_trainer/      # Trains MLFLow models
+│   ├── model_trainer/      # Trains MLFLow models
+│   └── weather_service/    # Assigns weather sites, fetches/stores weather data
 ├── shared/           # Reusable business logic and utilities
 │   ├── forecast_runner.py  # Core forecast generation
 │   ├── forecast_utils.py   # Forecast data helpers
 │   ├── logger_factory.py   # Logging setup
 │   ├── model_trainer.py    # Core model training
 ├── tasks/            # CLI entrypoints
+│   ├── fetch_weather_forecast.py    # Fetch weather forecast from Open-Meteo (no DB required)
+│   ├── fetch_weather_historical.py  # Fetch historical weather from Open-Meteo (no DB required)
+│   └── run_single_forecast.py       # Run a forecast for a single load asset
 scripts/              # Local testing helpers (not deployed)
 test/                 # Unit/integration tests (not deployed)
 ```
