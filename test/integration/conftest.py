@@ -1,5 +1,9 @@
 """Config file for integration tests."""
 
+import pandas as pd
+from forecasting_db.models import WeatherVariable
+
+
 import os
 
 import pytest
@@ -9,8 +13,6 @@ from sqlalchemy.orm import sessionmaker
 
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
-
-import pandas as pd
 
 from forecasting_db.models import Measurement
 from forecasting_engine.db_io.forecast_io import ForecastIO
@@ -221,3 +223,41 @@ def mock_forecasting_stack(monkeypatch, now_utc, make_forecast_df):
     )
 
     return fake_serializer
+
+
+# Shared dummy client for deterministic weather data in integration tests
+class DummyOpenMeteoClient:
+    def fetch_forecast(self, latitude, longitude, hours=None, **kwargs):
+        base_time = pd.Timestamp("2026-01-01T00:00:00Z")
+        n_hours = hours or kwargs.get("forecast_hours", 6)
+        records = []
+        for h in range(n_hours):
+            for var in WeatherVariable:
+                records.append(
+                    {
+                        "timestamp": base_time + pd.Timedelta(hours=h),
+                        "variable": var.value,
+                        "value": 10.0 + h,
+                        "issue_time": base_time,
+                        "weather_site_id": f"cell_{int(latitude*20)}_{int(longitude*20)}",
+                    }
+                )
+        return pd.DataFrame(records)
+
+    def fetch_historical(
+        self, latitude, longitude, end_date, start_date=None, **kwargs
+    ):
+        # Always return the same records regardless of start_date/end_date
+        base_time = pd.Timestamp("2025-12-31T18:00:00Z")
+        records = []
+        for h in range(6):
+            for var in WeatherVariable:
+                records.append(
+                    {
+                        "timestamp": base_time + pd.Timedelta(hours=h),
+                        "variable": var.value,
+                        "value": 5.0 + h,
+                        "weather_site_id": f"cell_{int(latitude*20)}_{int(longitude*20)}",
+                    }
+                )
+        return pd.DataFrame(records)
